@@ -1,0 +1,191 @@
+"use client";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import supabase from "../../../utils/supabase";
+import { FiArrowLeft } from "react-icons/fi";
+import Sideprofile from "@/components/sideprofile";
+import Loadingpage from "../../../loadingpages/loadingpage";
+
+const ChangeEmail = () => {
+  const router = useRouter();
+
+  const [currentEmail, setCurrentEmail] = useState<string>("");
+  const [newEmail, setNewEmail] = useState<string>("");
+  const [otp, setOtp] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [otpSent, setOtpSent] = useState<boolean>(false);
+
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      setLoading(true);
+      const { data, error } = await supabase.auth.getUser();
+      const user = data?.user;
+
+      if (error || !user) {
+        setError("Erro ao obter o e-mail do usuário.");
+        setLoading(false);
+        return;
+      }
+
+      setCurrentEmail(user.email || "");
+      setLoading(false);
+    };
+
+    fetchUserEmail();
+  }, []);
+
+  const sendOtp = async () => {
+    setError("");
+    setSuccess("");
+
+    // Enviar código OTP para o novo e-mail
+    const { error } = await supabase.auth.resend({
+      type: 'email_change',
+      email: newEmail,
+    })
+
+    if (error) {
+      setError("Erro ao enviar código OTP. Tente novamente.");
+      return;
+    }
+
+    setOtpSent(true);
+    setSuccess("Código OTP enviado para o novo e-mail.");
+  };
+
+  const verifyOtp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    // Aqui você pode validar o OTP com a lógica de verificação adequada
+    // Se o OTP for válido, atualize o e-mail do usuário
+
+    const { error: updateError } = await supabase.auth.updateUser({
+      email: newEmail,
+    });
+
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
+
+    setSuccess("E-mail atualizado com sucesso! Faça login novamente.");
+    setNewEmail("");
+    setOtp("");
+
+    await supabase.auth.signOut();
+    router.push("/signin");
+  };
+
+  if (!session) {
+    return (
+      <Loadingpage />
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white">
+      {/* Cabeçalho */}
+      <div className="fixed top-0 left-0 w-full bg-gray-950 shadow-md py-3 px-6 flex items-center z-10">
+        <button
+          onClick={() => router.push("/home")}
+          className="text-gray-400 hover:text-white transition cursor-pointer"
+          aria-label="Voltar para página inicial"
+        >
+          <FiArrowLeft size={24} />
+        </button>
+        <h1 className="ml-4 text-lg font-semibold">Alterar E-mail</h1>
+      </div>
+
+      <Sideprofile />
+
+      {/* Conteúdo */}
+      <div className="ml-140 pt-20 px-8 pb-16 items-center justify-center">
+        <div className="w-full max-w-md p-8 rounded shadow-md">
+          <h1 className="mb-6 text-2xl font-bold text-center">Alterar E-mail</h1>
+
+          {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
+          {success && <p className="mb-4 text-sm text-green-500">{success}</p>}
+
+          {loading ? (
+            <p className="text-center text-gray-500">Carregando...</p>
+          ) : (
+            <form onSubmit={otpSent ? verifyOtp : sendOtp}>
+              <div className="mb-4">
+                <label htmlFor="currentEmail" className="block mb-1 text-sm">
+                  E-mail Atual
+                </label>
+                <input
+                  id="currentEmail"
+                  name="currentEmail"
+                  value={currentEmail}
+                  disabled
+                  className="shadow appearance-none border rounded w-full py-3 px-4 text-white bg-gray-800 leading-tight focus:outline-none focus:shadow-outline"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="newEmail" className="block mb-1 text-sm">
+                  Novo E-mail
+                </label>
+                <input
+                  id="newEmail"
+                  name="newEmail"
+                  type="email"
+                  placeholder="Digite o novo e-mail"
+                  required
+                  value={newEmail}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setNewEmail(e.target.value)
+                  }
+                  className="shadow appearance-none border rounded w-full py-3 px-4 text-white bg-gray-800 leading-tight focus:outline-none focus:shadow-outline"
+                />
+              </div>
+
+              {otpSent ? (
+                <div className="mb-4">
+                  <label htmlFor="otp" className="block mb-1 text-sm">
+                    Código OTP
+                  </label>
+                  <input
+                    id="otp"
+                    name="otp"
+                    type="text"
+                    placeholder="Digite o código OTP"
+                    required
+                    value={otp}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setOtp(e.target.value)
+                    }
+                    className="shadow appearance-none border rounded w-full py-3 px-4 text-white bg-gray-800 leading-tight focus:outline-none focus:shadow-outline"
+                  />
+                </div>
+              ) : (
+                <button
+                  type="submit"
+                  className="w-full px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-300"
+                >
+                  Enviar Código OTP
+                </button>
+              )}
+
+              {otpSent && (
+                <button
+                  type="submit"
+                  className="w-full px-4 py-2 mt-4 text-white bg-blue-500 rounded hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-300"
+                >
+                  Verificar OTP e Alterar E-mail
+                </button>
+              )}
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ChangeEmail;
