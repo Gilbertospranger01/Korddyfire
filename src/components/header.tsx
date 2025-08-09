@@ -3,9 +3,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { useSidebar } from "../context/sidebarcontext";
+import { useSidebar } from "@/context/sidebarcontext";
 import Sidebar from "./sidebar";
 import InputSearch from "./input-search";
 import { IoChatboxEllipses } from "react-icons/io5";
