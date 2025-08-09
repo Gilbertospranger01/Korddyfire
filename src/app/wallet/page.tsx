@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { FiPlus, FiArrowUpRight, FiSend, FiArrowLeft, } from 'react-icons/fi';
 import { FaCheckCircle, FaClock, FaTimesCircle } from 'react-icons/fa';
-import supabase from '../../utils/supabase';
+import api from '@/utils/api';  // seu axios configurado
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
 import Image from 'next/image';
@@ -36,29 +36,26 @@ const Wallet = () => {
     };
   }, [session]);
 
-  useEffect(() => {
-    if (!user) return;
 
-    const fetchWalletData = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('wallets')
-          .select('id, balance, wallet_transactions(*)')
-          .eq('user_id', user.id)
-          .single();
+useEffect(() => {
+  if (!user) return;
 
-        if (error) throw error;
-        if (!data) return;
+  const fetchWalletData = async () => {
+    try {
+      // Supõe que seu backend retorna algo assim:
+      // { balance: number, wallet_transactions: Transaction[] }
+      const response = await api.get(`/wallets?userId=${user.id}`);
+      const data = response.data;
 
-        setBalance(data.balance || 0);
-        setTransactions(data.wallet_transactions || []);
-      } catch (error) {
-        console.error('Error fetching transactions:', error);
-      }
-    };
+      setBalance(data.balance || 0);
+      setTransactions(data.wallet_transactions || []);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    }
+  };
 
-    fetchWalletData();
-  }, [user]);
+  fetchWalletData();
+}, [user]);
 
   const handleNavigation = (path: string) => {
     if (!user) {
