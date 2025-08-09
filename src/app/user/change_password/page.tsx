@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import supabase from "../../../utils/supabase";
+import api from '@/utils/api';
 import InputPassword from "../../../components/ui/input-password";
 import { FiArrowLeft } from "react-icons/fi";
 import Sideprofile from "@/components/sideprofile";
@@ -45,48 +45,43 @@ const Change_Password = () => {
     checkUserLoginMethod();
   }, [session]);
 
-  const handleChange_Password = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
+const handleChange_Password = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError("");
+  setSuccess("");
+  setIsSubmitting(true);
 
-    if (newPassword !== confirmPassword) {
-      setError("A nova senha e a confirmação não correspondem.");
-      return;
+  if (newPassword !== confirmPassword) {
+    setError("A nova senha e a confirmação não correspondem.");
+    setIsSubmitting(false);
+    return;
+  }
+
+  try {
+    if (!isSocialLogin) {
+      // Validação da senha atual via API
+      await api.post('/auth/validate-password', { email, password: currentPassword });
     }
 
-    try {
-      if (!isSocialLogin) {
-        // Aqui idealmente você teria uma API backend para validar a senha atual.
-        // Como alternativa, pule esta validação no frontend e permita o update direto.
-        // Vou pular a validação para evitar uso incorreto do supabase.auth.signInWithPassword.
-      }
+    // Atualizar senha
+    await api.post('/auth/change-password', { email, newPassword });
 
-      // Atualiza a senha do usuário
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
+    setSuccess(isSocialLogin
+      ? "Senha definida com sucesso! Faça login novamente."
+      : "Senha atualizada com sucesso! Faça login novamente.");
 
-      if (updateError) {
-        setError(updateError.message);
-        return;
-      }
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
 
-      setSuccess(isSocialLogin
-        ? "Senha definida com sucesso! Faça login novamente."
-        : "Senha atualizada com sucesso! Faça login novamente.");
-
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-
-      // Forçar logout para segurança
-      await supabase.auth.signOut();
-      router.push("/signin");
-    } catch {
-      setError("Ocorreu um erro inesperado.");
-    }
-  };
+    // Desloga e redireciona
+    await api.post('/auth/logout'); // opcional, dependendo da sua API
+    router.push('/signin');
+  } catch (error: any) {
+    setError(error.response?.data?.message || "Ocorreu um erro inesperado.");
+    setIsSubmitting(false);
+  }
+};
 
   if (!session) return <Loadingpage />;
 
