@@ -21,7 +21,10 @@ const Header = () => {
   const { session } = useAuth();
   const router = useRouter();
   const { showSidebar, setShowSidebar } = useSidebar();
-  const [products, setProducts] = useState<{ id: string; name: string; price: number; image?: string; stock: number }[]>([]);
+
+  const [products, setProducts] = useState<
+    { id: string; name: string; price: number; image?: string; stock: number }[]
+  >([]);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [username, setUsername] = useState<string>("Usuário");
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,57 +32,62 @@ const Header = () => {
   const [loading, setLoading] = useState(false);
   const [balance, setBalance] = useState<number>(0);
 
+  // Buscar saldo
   useEffect(() => {
-    async function fetchData() {
+    async function fetchBalance() {
       try {
         const res = await api.get("/wallets");
-        setBalance(res.data.balance || []);
+        setBalance(res.data.balance || 0);
       } catch (err) {
-        console.error("Erro ao buscar produtos", err);
+        console.error("Erro ao buscar saldo", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    };
-
-    fetchData();
+    }
+    fetchBalance();
   }, []);
 
+  // Buscar produtos filtrados
   const handleSearch = useCallback(async () => {
     if (!searchTerm.trim()) return;
     setLoading(true);
 
-    const fetchProducts = async () => {
-      try {
-        const res = await api.get(`/products/${searchTerm}`);
-        setProducts(res.data || []);
-      } catch (err) {
-        console.error("Erro ao buscar produtos", err);
-      }
+    try {
+      const res = await api.get(`/products/${searchTerm}`);
+      setProducts(res.data || []);
+    } catch (err) {
+      console.error("Erro ao buscar produtos", err);
+    } finally {
       setLoading(false);
-    }, [searchTerm, setResults, setLoading]
-  });
+    }
+  }, [searchTerm]);
 
+  // Debounce na pesquisa
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       handleSearch();
-    }, 500); // Ajustei o tempo para 500ms
+    }, 500);
     return () => clearTimeout(delayDebounce);
   }, [searchTerm, handleSearch]);
 
+  // Buscar todos os produtos
   useEffect(() => {
-    const fetchProducts = async () => {
+    async function fetchProducts() {
       try {
         const res = await api.get("/products");
         setProducts(res.data || []);
       } catch (err) {
         console.error("Erro ao buscar produtos", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    };
+    }
     fetchProducts();
   }, []);
 
+  // Buscar perfil do usuário
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    async function fetchUserProfile() {
       try {
         const res = await api.get("/user");
         setUsername(res.data.username || "Usuário");
@@ -88,9 +96,9 @@ const Header = () => {
         console.error("Erro ao buscar perfil", err);
         router.push("/signin");
       }
-    };
+    }
     fetchUserProfile();
-  }, [session]);
+  }, [session, router]);
 
   if (!session) {
     return (
@@ -104,13 +112,14 @@ const Header = () => {
     <div>
       <Sidebar />
       <header className="w-full fixed top-0 left-0 z-79 border-b pt-2 pb-2 border-gray-400 bg-white dark:bg-gray-900 text-black dark:text-white">
-
         <div className="container mx-auto flex justify-between items-center px-4 relative">
+          {/* Logo */}
           <Link href="/home">
             <h1 className="text-2xl font-bold">Korddyfire</h1>
           </Link>
-          <nav
-            className={`absolute block md:static top-full left-0 w-full md:w-auto bg-gray-900 md:flex md:space-x-10 md:items-center py-4 pl-4 pt-9 md:p-0 transition`}>
+
+          {/* Barra de pesquisa */}
+          <nav className="absolute block md:static top-full left-0 w-full md:w-auto bg-gray-900 md:flex md:space-x-10 md:items-center py-4 pl-4 pt-9 md:p-0 transition">
             <div className="w-full relative">
               <InputSearch
                 value={searchTerm}
@@ -129,13 +138,18 @@ const Header = () => {
               )}
 
               {!loading && searchTerm.trim() && (
-                <div className="absolute w-full text-white shadow-lg mt-2 z-50 ">
+                <div className="absolute w-full text-white shadow-lg mt-2 z-50">
                   {results.length > 0 ? (
                     <ul className="w-full">
-                      {results.map((item, index) => (
-                        <li key={index} className="p-2 border-b border-gray-700 hover:bg-gray-700">
+                      {results.map((item) => (
+                        <li
+                          key={item.id}
+                          className="p-2 border-b border-gray-700 hover:bg-gray-700"
+                        >
                           <button
-                            onClick={() => router.push(`/details?id=${item.id}`)}
+                            onClick={() =>
+                              router.push(`/details?id=${item.id}`)
+                            }
                             className="flex items-center gap-8 w-full text-left px-6 py-4 text-white transition cursor-pointer"
                           >
                             {item.name}
@@ -144,27 +158,36 @@ const Header = () => {
                       ))}
                     </ul>
                   ) : (
-                    <div className="absolute w-full text-white h-20 shadow-lg  z-50 flex items-center justify-center">
-                      <p className="text-gray-400 text-center">Nenhum resultado encontrado.</p>
+                    <div className="absolute w-full text-white h-20 shadow-lg z-50 flex items-center justify-center">
+                      <p className="text-gray-400 text-center">
+                        Nenhum resultado encontrado.
+                      </p>
                     </div>
                   )}
                 </div>
-
               )}
             </div>
           </nav>
 
+          {/* Ações do usuário */}
           <div className="md:flex items-center">
-            <button className="mr-20 cursor-pointer" onClick={() => router.push("/chat")}>
+            <button
+              className="mr-20 cursor-pointer"
+              onClick={() => router.push("/chat")}
+            >
               <IoChatboxEllipses size={35} />
             </button>
             <ButtonTheme />
             <p className="hidden md:block mr-6">
-              <span className="text-blue-600 ml-4 mr-8">{username || "No Username"}</span>
+              <span className="text-blue-600 ml-4 mr-8">
+                {username || "No Username"}
+              </span>
             </p>
             <div className="relative">
-              <button className="w-14 h-14 flex justify-center items-center cursor-pointer rounded-full border-2 border-gray-500 focus:outline-none"
-                onClick={() => setShowSidebar(!showSidebar)}>
+              <button
+                className="w-14 h-14 flex justify-center items-center cursor-pointer rounded-full border-2 border-gray-500 focus:outline-none"
+                onClick={() => setShowSidebar(!showSidebar)}
+              >
                 {profilePicture ? (
                   <div className="w-[46px] h-[46px] rounded-full overflow-hidden">
                     <Image
@@ -189,4 +212,3 @@ const Header = () => {
 };
 
 export default Header;
-
