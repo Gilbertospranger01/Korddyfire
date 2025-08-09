@@ -3,8 +3,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { Heart } from "lucide-react";
-import Header from "../../components/header";
-import Loadingpage from "../../loadingpages/loadingpage";
+import Header from "@/components/header";
+import Loadingpage from "@/loadingpages/loadingpage";
 import { useRouter } from "next/navigation";
 import api from "@/utils/api";
 
