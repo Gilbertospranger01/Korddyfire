@@ -2,11 +2,11 @@
 
 import Image from 'next/image';
 import { useMemo } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import Side_Seller_Dashboard from '@/components/sideSellerdashboard';
 import { FiArrowLeft } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
-import Loadingpage from '../../loadingpages/loadingpage';
+import Loadingpage from '@/loadingpages/loadingpage';
 
 
 const Transactions = () => {
