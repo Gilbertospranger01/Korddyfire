@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "../hooks/useAuth";
 import { usePathname, useRouter } from "next/navigation";
-import supabase from "../utils/supabase";
+import api from "@/utils/api";
 import Loadingconnection from "../loadingpages/loadingconnection";
 import Loadingpage from "../loadingpages/loadingpage";
 
@@ -20,7 +20,6 @@ const Home = () => {
     { id: string; name: string; price: number; image?: string; stock: number }[]
   >([]);
 
-  // Timer para Loading inicial
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
@@ -28,7 +27,6 @@ const Home = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Redirecionamento baseado na sessão
   useEffect(() => {
     if (session === null) return;
     const currentPath = window.location.pathname;
@@ -43,15 +41,15 @@ const Home = () => {
     return price.toLocaleString("en");
   };
 
-  // Buscar produtos
+  // Agora usando api REST
   useEffect(() => {
     const fetchProducts = async () => {
-      const { data, error } = await supabase.from("products").select("*");
-      if (error) {
-        console.error("Erro ao buscar produtos:", error.message);
-        return;
+      try {
+        const response = await api.get("/products"); // espera que seu backend retorne lista
+        setProducts(response.data);
+      } catch (error) {
+        console.error("Erro ao buscar produtos:", error);
       }
-      setProducts(data);
     };
     fetchProducts();
   }, []);
@@ -72,13 +70,11 @@ const Home = () => {
     };
   }, []);
 
-  // Mostrar Loadingconnection se estiver carregando ou sem internet
   if (!isOnline) return <Loadingconnection />;
   if (loading) return <Loadingpage />;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center">
-      {/* Header */}
       <header className="w-full bg-gray-900 fixed top-0 left-0 border-b z-50 border-gray-700 py-4 flex justify-between items-center px-6">
         <h1 className="text-2xl font-bold text-white">Korddyfire</h1>
         <div className="space-x-4">
@@ -91,14 +87,12 @@ const Home = () => {
         </div>
       </header>
 
-      {/* Alerta de conexão */}
       {!isOnline && (
         <div className="w-full bg-red-600 text-white text-center py-2 fixed top-[64px] z-40">
           Sem conexão com a internet. Tentando reconectar...
         </div>
       )}
 
-      {/* Conteúdo principal */}
       <main className="container mx-auto px-4 py-8 mt-16 mb-10 max-w-full w-full transition-all">
         <section>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
@@ -127,7 +121,6 @@ const Home = () => {
         </section>
       </main>
 
-      {/* Footer */}
       <footer className="fixed left-0 bottom-0 w-full py-3 bg-gray-950">
         <div className="container mx-auto text-center">
           <p className="text-gray-900 dark:text-white">&copy; 2025 Korddyfire. from Korddy All rights reserved.</p>
