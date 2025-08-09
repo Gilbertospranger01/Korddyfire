@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import supabase from '@/utils/supabase';
 import { io } from 'socket.io-client';
 import { useAuth } from '@/hooks/useAuth';
 import { User, ChatMessage } from '@/utils/types';
@@ -9,6 +8,7 @@ import ChatSidebar from '@/components/chatSidebar';
 import ChatArea from '@/components/chatArea';
 import { IoClose, IoMenu } from 'react-icons/io5';
 import Loadingpage from '../../loadingpages/loadingpage';
+import api from '@/utils/api'; // import da API RESTful
 
 const socket = io('http://localhost:3001');
 
@@ -46,41 +46,28 @@ export default function Chat() {
     if (activeChatUser) fetchMessages();
   }, [activeChatUser]);
 
+  // Busca usuários pela API RESTful
   const fetchUsers = async () => {
-    if (!search.trim()) return; // Não busca se o campo de pesquisa estiver vazio
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .ilike('username', `%${search}%`); // Busca por nome de usuário
+    if (!search.trim()) return;
 
-    if (!error && data) {
-      setProfiles(data.filter((u: User) => u.id !== user?.id));
+    try {
+      const res = await api.get(`/profiles?username_like=${search}`);
+      const data = res.data as User[];
+      setProfiles(data.filter((u) => u.id !== user?.id));
+    } catch (error) {
+      console.error('Erro ao buscar usuários:', error);
     }
   };
 
+  // Carrega contatos anteriores via API RESTful
   const loadPreviousContacts = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('chat_messages')
-      .select('user_id, receiver_id')
-      .or(`user_id.eq.${userId},receiver_id.eq.${userId}`);
-
-    if (error) {
+    try {
+      const res = await api.get(`/chat_messages/contacts/${userId}`);
+      // API retorna os usuários contatos direto, ajusta conforme sua API
+      setPreviousContacts(res.data || []);
+    } catch (error) {
       console.error('Erro ao carregar contatos:', error);
-      return;
     }
-
-    const contactIds = new Set<string>();
-    data?.forEach((msg) => {
-      if (msg.user_id !== userId) contactIds.add(msg.user_id);
-      if (msg.receiver_id !== userId) contactIds.add(msg.receiver_id);
-    });
-
-    const { data: usersData } = await supabase
-      .from('profiles')
-      .select('*')
-      .in('id', Array.from(contactIds));
-
-    setPreviousContacts(usersData || []);
   };
 
   useEffect(() => {
@@ -89,25 +76,28 @@ export default function Chat() {
     }
   }, [user]);
 
+  // Busca mensagens entre usuários via API RESTful
   const fetchMessages = async () => {
     if (!user || !activeChatUser) return;
 
-    const { data, error } = await supabase
-      .from('chat_messages')
-      .select('*')
-      .or(
-        `and(user_id.eq.${user.id},receiver_id.eq.${activeChatUser.id}),and(user_id.eq.${activeChatUser.id},receiver_id.eq.${user.id})`
-      )
-      .order('created_at', { ascending: true });
-
-    if (!error) setMessages(data || []);
-    else console.error('Erro ao carregar mensagens:', error);
+    try {
+      const res = await api.get(`/chat_messages/conversation`, {
+        params: {
+          user1: user.id,
+          user2: activeChatUser.id,
+        },
+      });
+      setMessages(res.data || []);
+    } catch (error) {
+      console.error('Erro ao carregar mensagens:', error);
+    }
   };
 
+  // Envia mensagem via API RESTful
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user || !activeChatUser) return;
 
-    const msg: ChatMessage = {
+    const msg: Partial<ChatMessage> = {
       username: user.username,
       user_id: user.id,
       receiver_id: activeChatUser.id,
@@ -115,40 +105,49 @@ export default function Chat() {
       created_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase.from('chat_messages').insert([msg]).select();
-
-    if (!error && data?.[0]) {
-      socket.emit('send_message', data[0]);
-      setMessages((prev) => [...prev, data[0]]);
+    try {
+      const res = await api.post('/chat_messages', msg);
+      const savedMsg = res.data as ChatMessage;
+      socket.emit('send_message', savedMsg);
+      setMessages((prev) => [...prev, savedMsg]);
       setNewMessage('');
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
     }
   };
 
+  // Edita mensagem via API RESTful
   const handleEditMessage = async (id: string, oldMsg: string) => {
     const newMsg = prompt('Editar mensagem:', oldMsg);
     if (newMsg && newMsg !== oldMsg) {
-      await supabase.from('chat_messages').update({ message: newMsg }).eq('id', id);
-      setMessages((prev) =>
-        prev.map((msg) => (msg.id === id ? { ...msg, message: newMsg } : msg))
-      );
+      try {
+        await api.put(`/chat_messages/${id}`, { message: newMsg });
+        setMessages((prev) =>
+          prev.map((msg) => (msg.id === id ? { ...msg, message: newMsg } : msg))
+        );
+      } catch (error) {
+        console.error('Erro ao editar mensagem:', error);
+      }
     }
   };
 
+  // Deleta mensagem via API RESTful
   const handleDeleteMessage = async (id?: string) => {
     if (!id) return;
-    await supabase.from('chat_messages').delete().eq('id', id);
-    setMessages((prev) => prev.filter((msg) => msg.id !== id));
+    try {
+      await api.delete(`/chat_messages/${id}`);
+      setMessages((prev) => prev.filter((msg) => msg.id !== id));
+    } catch (error) {
+      console.error('Erro ao deletar mensagem:', error);
+    }
   };
 
   if (!session) {
-    return (
-      <Loadingpage/>
-    );
+    return <Loadingpage />;
   }
 
   return (
     <div className="flex flex-col md:flex-row h-screen">
-      {/* Botão de Menu para Sidebar */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         className="md:hidden fixed top-4 right-4 z-99 bg-blue-600 text-white p-2 rounded-full shadow-lg"
@@ -156,7 +155,6 @@ export default function Chat() {
         {isSidebarOpen ? <IoClose size={24} /> : <IoMenu size={24} />}
       </button>
 
-      {/* Sidebar */}
       <ChatSidebar
         search={search}
         setSearch={setSearch}
@@ -164,11 +162,10 @@ export default function Chat() {
         setActiveChatUser={setActiveChatUser}
         previousContacts={previousContacts}
         isOpen={isSidebarOpen}
-        setIsSidebarOpen={setIsSidebarOpen} // Passa a função para fechar a sidebar
+        setIsSidebarOpen={setIsSidebarOpen}
         handleSearch={fetchUsers}
       />
 
-      {/* Área de Chat */}
       <ChatArea
         messages={messages}
         newMessage={newMessage}
