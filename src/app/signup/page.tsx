@@ -3,7 +3,7 @@ import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import BackgroundImage from "../../components/backgroundimage";
+import BackgroundImage from "@/components/backgroundimage";
 import api from "@/utils/api";
 import { FaLock, FaUser } from "react-icons/fa";
 import Input from "@/components/ui/input";
