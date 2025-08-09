@@ -1,4 +1,5 @@
-"use cliente";
+"use client";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/utils/api";
@@ -6,9 +7,10 @@ import { useAuth } from "@/hooks/useAuth";
 import Loadingpage from "@/loadingpages/loadingpage";
 import { FiArrowLeft } from "react-icons/fi";
 import Sideprofile from "@/components/sideprofile";
-import Image from "next/image";
+import PhoneInput from "react-phone-number-input"; // Ajusta para o teu import real
+import "react-phone-number-input/style.css";
 
-const Change_Phone = () => {
+const ChangePhone = () => {
   const router = useRouter();
   const { session } = useAuth();
 
@@ -25,7 +27,9 @@ const Change_Phone = () => {
     setLoading(false);
   }, [session]);
 
-  if (!session) return <Loadingpage />;
+  if (!session || loading) {
+    return <Loadingpage />;
+  }
 
   const sendOtp = async () => {
     setError("");
@@ -49,7 +53,6 @@ const Change_Phone = () => {
       await api.post("/user/phone/verify-otp", { phone: currentPhone, otp });
       setSuccess("Número de telefone atualizado com sucesso! Faça login novamente.");
       setOtp("");
-      // Força logout após mudança
       await api.post("/auth/logout");
       router.push("/signin");
     } catch (e: any) {
@@ -74,47 +77,45 @@ const Change_Phone = () => {
       <Sideprofile />
 
       {/* Conteúdo */}
-      <div className="ml-140 pt-20 px-8 pb-16 items-center justify-center">
-        <div className="w-full max-w-md p-8 rounded shadow-md">
-          <h1 className="mb-6 text-2xl font-bold text-center">Alterar Número de Telefone</h1>
+      <div className="pt-20 px-8 pb-16 flex items-center justify-center">
+        <div className="w-full max-w-md p-8 rounded shadow-md bg-gray-800">
+          <h1 className="mb-6 text-2xl font-bold text-center">
+            Alterar Número de Telefone
+          </h1>
 
           {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
           {success && <p className="mb-4 text-sm text-green-500">{success}</p>}
 
-          {loading ? (
-            <p className="text-center text-gray-500">Carregando...</p>
-          ) : (
-            <form onSubmit={otpSent ? verifyOtp : (e) => { e.preventDefault(); sendOtp(); }}>
-              <PhoneInput
-                value={currentPhone}
-                onChange={(val) => setCurrentPhone(val)}
+          <form onSubmit={otpSent ? verifyOtp : (e) => { e.preventDefault(); sendOtp(); }}>
+            <PhoneInput
+              defaultCountry="AO" // ajusta pro país padrão
+              value={currentPhone}
+              onChange={(val) => setCurrentPhone(val || "")}
+              className="mb-4"
+            />
+
+            {otpSent && (
+              <input
+                type="text"
+                placeholder="Digite o código OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                className="shadow appearance-none border rounded w-full py-3 px-4 text-white bg-gray-700 focus:outline-none mb-4"
+                required
               />
+            )}
 
-              {otpSent && (
-                <input
-                  type="text"
-                  placeholder="Digite o código OTP"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-3 px-4 text-white bg-gray-800 leading-tight focus:outline-none focus:shadow-outline mb-4 mt-4"
-                  required
-                />
-              )}
-
-              <button
-                type="submit"
-                className="w-full px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-300"
-              >
-                {otpSent ? "Verificar OTP e Alterar Telefone" : "Enviar Código OTP"}
-              </button>
-            </form>
-          )}
+            <button
+              type="submit"
+              className="w-full px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-300"
+            >
+              {otpSent ? "Verificar OTP e Alterar Telefone" : "Enviar Código OTP"}
+            </button>
+          </form>
         </div>
       </div>
     </div>
   );
 };
 
-// Mantém seu PhoneInput igual
-
-export default Change_Phone;
+export default ChangePhone;
