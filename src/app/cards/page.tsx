@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 import Side_Seller_Dashboard from "@/components/sideSellerdashboard";
 import api from '@/utils/api';
 import { FiArrowLeft } from "react-icons/fi";
 import { useRouter } from "next/navigation";
-import Loadingpage from "../../loadingpages/loadingpage";
+import Loadingpage from "@/loadingpages/loadingpage";
 
 interface Card {
     last4: string;
