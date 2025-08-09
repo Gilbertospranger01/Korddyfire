@@ -4,12 +4,12 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import api from "@/utils/api";  // substituindo supabase
-import Header from "../../components/header";
+import Header from "@/components/header";
 import Image from "next/image";
 import { Heart } from "lucide-react";
 import React from "react";
 import { useAuth } from "@/hooks/useAuth";
-import Loadingpage from "../../loadingpages/loadingpage";
+import Loadingpage from "@/loadingpages/loadingpage";
 
 function Details() {
   const router = useRouter();
