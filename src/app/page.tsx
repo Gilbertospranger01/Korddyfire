@@ -6,8 +6,8 @@ import Image from "next/image";
 import { useAuth } from "../hooks/useAuth";
 import { usePathname, useRouter } from "next/navigation";
 import api from "@/utils/api";
-import Loadingconnection from "../loadingpages/loadingconnection";
-import Loadingpage from "../loadingpages/loadingpage";
+import Loadingconnection from "@/loadingpages/loadingconnection";
+import Loadingpage from "@/loadingpages/loadingpage";
 
 const Home = () => {
   const { session } = useAuth();
