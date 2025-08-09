@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import supabase from "@/utils/supabase";
+import api from "@/utils/api";
 
 export default function Recover_password() {
   const [email, setEmail] = useState("");
@@ -19,13 +19,13 @@ export default function Recover_password() {
     setStatus("Sending...");
     setErrorStatus(false);
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
-    if (error) {
-      setStatus(`Error: ${error.message}`);
-      setErrorStatus(true);
-    } else {
+    try {
+      await api.post("/auth/reset-password", { email });
       setStatus("Recovery email sent! Check your inbox.");
       setErrorStatus(false);
+    } catch (error: any) {
+      setStatus(`Error: ${error.response?.data?.message || error.message}`);
+      setErrorStatus(true);
     }
   };
 
@@ -63,7 +63,7 @@ export default function Recover_password() {
               onClick={handleSendRecovery}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 w-full rounded focus:outline-none focus:shadow-outline cursor-pointer"
             >
-              {email.trim() === "" ? "Send Reset Link" : "Submit"}
+              Send Reset Link
             </button>
           </form>
           <Link href="/signin" className="text-blue-500 hover:text-blue-800 text-sm mt-4">
