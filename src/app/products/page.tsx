@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import supabase from "../../utils/supabase";
+import api from "@/utils/api"; // substitui supabase por api
 import Image from "next/image";
 import { useAuth } from '../../hooks/useAuth';
 import Side_Seller_Dashboard from '@/components/sideSellerdashboard';
@@ -34,25 +34,28 @@ function Products() {
 
   useEffect(() => {
     async function fetchUser() {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data?.user) return;
-      setUserId(data.user.id);
+      // Aqui você vai precisar adaptar essa parte pra pegar o userId do seu backend
+      // Se não tiver endpoint pra isso, você pode pegar do session direto
+      if (session?.user?.id) {
+        setUserId(session.user.id);
+      }
     }
 
     fetchUser();
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     if (!userId) return;
 
     async function fetchProduct() {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("products")
-        .select("id, image, name, description, price")
-        .eq("user_id", userId);
-
-      if (!error) setProduct(data || []);
+      try {
+        const response = await api.get(`products?user_id=${userId}`);
+        setProduct(response.data);
+      } catch (error) {
+        console.error("Erro ao buscar produtos:", error);
+        setProduct([]);
+      }
       setLoading(false);
     }
 
@@ -60,9 +63,7 @@ function Products() {
   }, [userId]);
 
   if (!session) {
-    return (
-      <Loadingpage />
-    );
+    return <Loadingpage />;
   }
 
   return (
@@ -96,9 +97,6 @@ function Products() {
 
         {/* Main content */}
         <main className="flex-1 p-4 mt-20 ml-60">
-
-
-
           <h1 className="text-2xl font-bold text-center mb-6">Meus Produtos</h1>
 
           {loading ? (
@@ -133,5 +131,3 @@ function Products() {
 }
 
 export default Products;
-
-
