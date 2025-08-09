@@ -4,14 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { FiArrowLeft, FiCheckCircle } from "react-icons/fi";
-import supabase from "@/utils/supabase";
+import api from "@/utils/api";
 import Loadingpage from "@/loadingpages/loadingpage";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function AddMoney() {
   const { session } = useAuth();
   const router = useRouter();
-  const [amount, setAmount] = useState<string>(""); // string para melhor controle input
+  const [amount, setAmount] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
   const userId = session?.user?.id;
@@ -32,51 +32,35 @@ export default function AddMoney() {
     setLoading(true);
 
     try {
-      // Busca wallet
-      const { data: wallet, error: walletError } = await supabase
-        .from("wallets")
-        .select("id, balance")
-        .eq("user_id", userId)
-        .single();
-
-      if (walletError && walletError.code !== "PGRST116") {
-        throw new Error(walletError.message);
-      }
+      // Busca carteira do usuário
+      const { data: wallet } = await api.get(`/wallets/${userId}`);
 
       if (wallet) {
-        // Atualiza saldo
-        const { error: updateError } = await supabase
-          .from("wallets")
-          .update({ balance: wallet.balance + value })
-          .eq("user_id", userId);
-
-        if (updateError) throw new Error(updateError.message);
+        // Atualiza saldo existente
+        await api.put(`/wallets/${userId}`, {
+          balance: wallet.balance + value,
+        });
       } else {
-        // Cria carteira nova
-        const { error: insertError } = await supabase
-          .from("wallets")
-          .insert({ user_id: userId, balance: value });
-
-        if (insertError) throw new Error(insertError.message);
+        // Cria nova carteira
+        await api.post(`/wallets`, {
+          user_id: userId,
+          balance: value,
+        });
       }
 
       // Registra transação
-      const { error: transactionError } = await supabase
-        .from("wallet_transactions")
-        .insert({
-          user_id: userId,
-          wallet_id: wallet?.id || null,
-          amount: value,
-          type: "deposit",
-          status: "completed",
-        });
-
-      if (transactionError) throw new Error(transactionError.message);
+      await api.post(`/wallet-transactions`, {
+        user_id: userId,
+        wallet_id: wallet?.id || null,
+        amount: value,
+        type: "deposit",
+        status: "completed",
+      });
 
       alert("Dinheiro adicionado com sucesso!");
       router.push("/wallet");
     } catch (err: any) {
-      alert(`Erro: ${err.message || "Tente novamente mais tarde."}`);
+      alert(`Erro: ${err.response?.data?.error || "Tente novamente mais tarde."}`);
     } finally {
       setLoading(false);
     }
