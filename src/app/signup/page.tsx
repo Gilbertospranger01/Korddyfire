@@ -3,7 +3,7 @@ import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import BackgroundVideo from "../../components/backgroundvideo";
+import BackgroundImage from "../../components/backgroundimage";
 import api from "@/utils/api";
 import { FaLock, FaUser } from "react-icons/fa";
 import Input from "@/components/ui/input";
@@ -91,7 +91,7 @@ function Signup() {
   return (
     <div className="flex w-full h-screen bg-gray-100 overflow-hidden">
       <div className="w-1/2 h-full">
-        <BackgroundVideo />
+        <BackgroundImage />
       </div>
 
       <div className="w-1/2 h-full flex items-center justify-center bg-gray-950">
