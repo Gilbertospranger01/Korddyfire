@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import BackgroundVideo from "../../components/backgroundvideo";
-import axios from "axios";
+import api from "@/utils/api";
 import { FaLock, FaUser } from "react-icons/fa";
 import Input from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -59,7 +59,7 @@ function Signup() {
     }
 
     try {
-      const response = await axios.post("http://localhost:4000/api/signup", {
+      const response = await api.post("http://localhost:4000/api/signup", {
         email: formData.email,
         password: formData.password,
         name: formData.name,
@@ -77,7 +77,7 @@ function Signup() {
       router.push("/signin");
 
     } catch (error) {
-      const errorMessage = axios.isAxiosError(error) && error.response?.data?.message
+      const errorMessage = api.isAxiosError(error) && error.response?.data?.message
         ? error.response.data.message
         : "Erro desconhecido";
 
