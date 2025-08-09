@@ -2,11 +2,11 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "@/utils/api"; // substitui supabase por api
 import Image from "next/image";
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import Side_Seller_Dashboard from '@/components/sideSellerdashboard';
 import { FiArrowLeft } from "react-icons/fi";
 import { useRouter } from "next/navigation";
-import Loadingpage from "../../loadingpages/loadingpage";
+import Loadingpage from "@/loadingpages/loadingpage";
 
 type Product = {
   id: string;
