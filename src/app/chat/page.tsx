@@ -7,7 +7,7 @@ import { User, ChatMessage } from '@/utils/types';
 import ChatSidebar from '@/components/chatSidebar';
 import ChatArea from '@/components/chatArea';
 import { IoClose, IoMenu } from 'react-icons/io5';
-import Loadingpage from '../../loadingpages/loadingpage';
+import Loadingpage from '@/loadingpages/loadingpage';
 import api from '@/utils/api'; // import da API RESTful
 
 const socket = io('http://localhost:3001');
