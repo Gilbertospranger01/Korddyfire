@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import supabase from "../utils/supabase";
+import api from "@/utils/api";
 import Image from "next/image";
-
 
 interface BackgroundImageProps {
   className?: string;
@@ -15,28 +14,17 @@ const BackgroundImage: React.FC<BackgroundImageProps> = ({ className }) => {
 
   useEffect(() => {
     const fetchImageUrls = async () => {
-      const { data, error } = await supabase.storage
-        .from("korddyfire-store-files/korddyfire/backgroundimages")
-        .list("backgroundimages", { limit: 13 });
-
-      if (error) {
-        console.error("Erro ao buscar imagens:", error.message);
-        return;
+      try {
+        const response = await api.get("/background-images");
+        const urls: string[] = response.data; // assume array de URLs públicas direto
+        if (urls.length === 0) {
+          console.error("Nenhuma imagem encontrada.");
+          return;
+        }
+        setImageUrls(urls);
+      } catch (error) {
+        console.error("Erro ao buscar imagens:", error);
       }
-
-      if (data.length === 0) {
-        console.error("Nenhuma imagem encontrada.");
-        return;
-      }
-
-      const urls = data.map(
-        (file) =>
-          supabase.storage
-            .from("korddyfire-store-files/korddyfire/backgroundimages")
-            .getPublicUrl(`backgroundimages/${file.name}`).data.publicUrl
-      );
-
-      setImageUrls(urls);
     };
 
     fetchImageUrls();
@@ -60,8 +48,9 @@ const BackgroundImage: React.FC<BackgroundImageProps> = ({ className }) => {
       src={imageUrls[currentImageIndex]}
       alt="Background"
       className={className}
-      width={1920} 
+      width={1920}
       height={1080}
+      priority
     />
   );
 };
