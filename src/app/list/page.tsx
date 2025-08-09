@@ -3,13 +3,12 @@ export const dynamic = "force-dynamic";
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import supabase from "../../utils/supabase";
+import api from "../../utils/api";  // <-- aqui, troca supabase por api
 import Header from "../../components/header";
 import Image from "next/image";
 import { Heart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Loadingpage from "../../loadingpages/loadingpage";
-
 
 interface Product {
   id: string;
@@ -31,11 +30,11 @@ function List() {
   const [loadin, setLoadin] = useState<Record<string, boolean>>({});
 
   const handleBuyNow = (productId: string) => {
-    setLoadin((prev) => ({ ...prev, [productId]: true })); // Marca o produto como carregando
+    setLoadin((prev) => ({ ...prev, [productId]: true }));
     setTimeout(() => {
       router.push(`/details?id=${productId}`);
-      setLoadin((prev) => ({ ...prev, [productId]: false })); // Marca o produto como não carregando após a navegação
-    }, 2000); // Simula o carregamento de 2 segundos
+      setLoadin((prev) => ({ ...prev, [productId]: false }));
+    }, 2000);
   };
 
   const toggleFavorite = (id: string) => {
@@ -43,7 +42,6 @@ function List() {
       ...prev,
       [id]: !prev[id],
     }));
-    console.log(favorites);
   };
 
   const unslugify = (slug: string) => {
@@ -61,17 +59,14 @@ function List() {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .ilike("name", `%${searchQuery}%`)
-
-      if (error || !data) {
+      try {
+        // API REST, filtro com query param 'name_like' ou 'name_contains' conforme backend
+        const response = await api.get(`products?name_like=${encodeURIComponent(searchQuery)}`);
+        setProducts(response.data);
+      } catch (err) {
         setError("Erro ao buscar produtos.");
-        console.error("Erro ao buscar produtos:", error);
         setProducts([]);
-      } else {
-        setProducts(data);
+        console.error("Erro ao buscar produtos:", err);
       }
 
       setLoading(false);
@@ -81,15 +76,7 @@ function List() {
   }, [productName]);
 
   if (loading) {
-    return (
-      <Loadingpage />
-    );
-  }
-
-  if (!session) {
-    return (
-      <Loadingpage />
-    );
+    return <Loadingpage />;
   }
 
   if (error) return <p className="text-red-500">{error}</p>;
@@ -97,7 +84,7 @@ function List() {
   if (products.length === 0) return <p>Produto(s) não encontrado(s).</p>;
 
   return (
-    <div className={`bg-gray-900 min-h-screen container mx-auto px-4 py-8 mt-16 max-w-full w-full transition-all`}>
+    <div className="bg-gray-900 min-h-screen container mx-auto px-4 py-8 mt-16 max-w-full w-full transition-all">
       <Header />
       <div className="flex space-x-4 overflow-x-auto">
         {products.map((product) => (
@@ -123,31 +110,23 @@ function List() {
                 />
               </button>
               <span
-                className={`absolute top-2 left-2 text-xs px-2 py-1 rounded-full font-medium ${product.stock > 0
-                  ? "bg-green-600 text-white"
-                  : "bg-red-500 text-white"
-                  }`}
+                className={`absolute top-2 left-2 text-xs px-2 py-1 rounded-full font-medium ${
+                  product.stock > 0 ? "bg-green-600 text-white" : "bg-red-500 text-white"
+                }`}
               >
                 {product.stock > 0 ? "In Stock" : "Out of Stock"}
               </span>
             </div>
             <div className="p-4 flex flex-col gap-2 pt-5">
-              <h4 className="text-lg font-semibold text-gray-800 truncate">
-                {product.description}
-              </h4>
-              <h4 className="text-lg font-semibold text-gray-800 truncate">
-                {product.name}
-              </h4>
+              <h4 className="text-lg font-semibold text-gray-800 truncate">{product.description}</h4>
+              <h4 className="text-lg font-semibold text-gray-800 truncate">{product.name}</h4>
               <p className="text-green-600 text-xl font-bold">
-                {new Intl.NumberFormat("en-US", {
-                  style: "currency",
-                  currency: "USD",
-                }).format(product.price)}
+                {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(product.price)}
               </p>
               <button
                 className="mt-auto h-12 flex gap-2 items-center justify-center bg-green-600 text-white py-2 rounded-xl w-full hover:bg-green-700 transition duration-300 shadow-md cursor-pointer relative disabled:bg-green-700"
-                onClick={() => handleBuyNow(product.id)} // Passa o id do produto para o handler
-                disabled={loadin[product.id]} // Desabilita apenas o botão do produto que está carregando
+                onClick={() => handleBuyNow(product.id)}
+                disabled={loadin[product.id]}
               >
                 {loadin[product.id] ? (
                   <div className="flex gap-1">
