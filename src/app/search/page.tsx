@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import InputSearch from "../../components/input-search";
+import InputSearch from "@/components/input-search";
 import api from "@/utils/api";
 
 type Product = {
