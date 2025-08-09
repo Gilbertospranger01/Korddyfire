@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import api from "../../utils/api";  // <-- aqui, troca supabase por api
+import api from "@/utils/api";  // <-- aqui, troca supabase por api
 import Header from "../../components/header";
 import Image from "next/image";
 import { Heart } from "lucide-react";
