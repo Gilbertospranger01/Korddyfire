@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import Image from "next/image";
 import Side_Seller_Dashboard from "@/components/sideSellerdashboard";
-import axios from "axios";
+import api from '@/utils/api';
 import { FiArrowLeft } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import Loadingpage from "../../loadingpages/loadingpage";
@@ -40,40 +40,39 @@ export default function Cards() {
         };
     }, [session]);
 
-    const handleRequestCard = async () => {
-        try {
-            const userId = user?.id;
+const handleRequestCard = async () => {
+  try {
+    const userId = user?.id;
 
-            if (!userId) {
-                setError("Usuário inválido ou não autenticado.");
-                return;
-            }
+    if (!userId) {
+      setError("Usuário inválido ou não autenticado.");
+      return;
+    }
 
-            const res = await axios.post("/api/stripe/request-card", {
-                userId: user.id,
-                name: user.name,
-                email: user.email,
-                phone: user.phone,
-                birthdate: user.birthdate,
-                nationality: user.nationality,
-                address: user.address,
-                currency: user.currency,
-            });
+    const res = await api.post("/stripe/request-card", {
+      userId: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      birthdate: user.birthdate,
+      nationality: user.nationality,
+      address: user.address,
+      currency: user.currency,
+    });
 
-            setCards([res.data.card]); // ou `res.data.cards` dependendo do backend
-            setError(null);
-            alert("Cartão solicitado com sucesso!");
-        } catch (err: any) {
-            console.error("❌ Erro ao solicitar cartão:", err);
+    setCards([res.data.card]); // ou `res.data.cards` conforme backend
+    setError(null);
+    alert("Cartão solicitado com sucesso!");
+  } catch (err: any) {
+    console.error("❌ Erro ao solicitar cartão:", err);
 
-            const apiError = err.response?.data?.error;
-            const errorMessage =
-                apiError?.message ||
-                "Erro inesperado. Tente novamente mais tarde.";
+    const apiError = err.response?.data?.error;
+    const errorMessage =
+      apiError?.message || "Erro inesperado. Tente novamente mais tarde.";
 
-            setError(errorMessage);
-        }
-    };
+    setError(errorMessage);
+  }
+};
 
     const handleShowCvv = (index: number) => {
         setShowCvvIndex(index);
