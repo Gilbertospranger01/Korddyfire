@@ -1,6 +1,6 @@
 "use client";
 
-import Loadingpage from "../../../loadingpages/loadingpage";
+import Loadingpage from "@/loadingpages/loadingpage";
 import { useState } from "react";
 
 export default function BoletoPaymentPage() {
