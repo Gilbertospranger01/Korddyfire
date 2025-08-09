@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiArrowLeft } from 'react-icons/fi';
 import Image from 'next/image';
-import { useAuth } from '../../../hooks/useAuth';
-import Sideprofile from '../../../components/sideprofile';
-import Loadingpage from '../../../loadingpages/loadingpage';
+import { useAuth } from '@/hooks/useAuth';
+import Sideprofile from '@/components/sideprofile';
+import Loadingpage from '@/loadingpages/loadingpage';
 import api from '@/utils/api';
 
 
