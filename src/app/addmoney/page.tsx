@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { FiArrowLeft, FiCheckCircle } from "react-icons/fi";
-import supabase from "../../utils/supabase";
-import Loadingpage from "../../loadingpages/loadingpage";
-import { useAuth } from "../../hooks/useAuth";
+import supabase from "@/utils/supabase";
+import Loadingpage from "@/loadingpages/loadingpage";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function AddMoney() {
   const { session } = useAuth();
