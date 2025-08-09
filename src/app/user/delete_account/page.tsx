@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { FiArrowLeft } from "react-icons/fi";
 import Sideprofile from "@/components/sideprofile";
 import { useAuth } from "@/hooks/useAuth";
-import Loadingpage from "../../../loadingpages/loadingpage";
+import Loadingpage from "@/loadingpages/loadingpage";
 import api from "@/utils/api";
 
 const Delete_Account = () => {
