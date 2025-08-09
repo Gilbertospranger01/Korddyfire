@@ -4,11 +4,11 @@ export const dynamic = "force-dynamic";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import api from "@/utils/api";  // <-- aqui, troca supabase por api
-import Header from "../../components/header";
+import Header from "@/components/header";
 import Image from "next/image";
 import { Heart } from "lucide-react";
 import { useRouter } from "next/navigation";
-import Loadingpage from "../../loadingpages/loadingpage";
+import Loadingpage from "@/loadingpages/loadingpage";
 
 interface Product {
   id: string;
