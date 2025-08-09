@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import supabase from "../../utils/supabase";
+import api from "@/utils/api";  // substituindo supabase
 import Header from "../../components/header";
 import Image from "next/image";
 import { Heart } from "lucide-react";
@@ -43,7 +43,6 @@ function Details() {
     try {
       setLoading((prev) => ({ ...prev, [product?.id ?? ""]: true }));
 
-      // ✅ Envia POST para o backend
       const res = await fetch('/api/create-payment-intent', {
         method: 'POST',
         headers: {
@@ -58,9 +57,6 @@ function Details() {
         throw new Error(data?.error || "Erro ao criar pagamento");
       }
 
-      console.log("PaymentIntent criado com sucesso:", data);
-
-      // ✅ Agora redireciona, se quiser
       router.push(`/payments?client_secret=${data.clientSecret}`);
     } catch (err) {
       console.error("Erro no pagamento:", err);
@@ -80,16 +76,11 @@ function Details() {
     async function fetchProduct() {
       if (!productId) return;
 
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("id", productId)
-        .single();
-
-      if (error) {
+      try {
+        const response = await api.get(`products/${productId}`);
+        setProduct(response.data);
+      } catch (error) {
         console.error("Erro ao buscar produto:", error);
-      } else {
-        setProduct(data);
       }
     }
 
@@ -97,15 +88,11 @@ function Details() {
   }, [productId]);
 
   if (!product) {
-    return (
-      <Loadingpage />
-    );
+    return <Loadingpage />;
   }
 
   if (!session) {
-    return (
-      <Loadingpage />
-    );
+    return <Loadingpage />;
   }
 
   return (
