@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiArrowLeft, FiUpload, FiTrash2 } from 'react-icons/fi';
 import Image from 'next/image';
-import { useAuth } from '../../../hooks/useAuth';
-import PhoneInput from '../../../components/phoneinput';
+import { useAuth } from '@/hooks/useAuth';
+import PhoneInput from '@/components/phoneinput';
 import Sideprofile from '@/components/sideprofile';
-import Loadingpage from '../../../loadingpages/loadingpage';
+import Loadingpage from '@/loadingpages/loadingpage';
 import api from '@/utils/api';
 
 const Edit_Profile = () => {
