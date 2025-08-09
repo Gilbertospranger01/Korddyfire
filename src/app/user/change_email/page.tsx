@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import supabase from "../../../utils/supabase";
+import api from '@/utils/api';
 import { FiArrowLeft } from "react-icons/fi";
 import Sideprofile from "@/components/sideprofile";
 import Loadingpage from "../../../loadingpages/loadingpage";
@@ -36,49 +36,41 @@ const ChangeEmail = () => {
     fetchUserEmail();
   }, []);
 
-  const sendOtp = async () => {
-    setError("");
-    setSuccess("");
-
-    // Enviar código OTP para o novo e-mail
-    const { error } = await supabase.auth.resend({
-      type: 'email_change',
-      email: newEmail,
-    })
-
-    if (error) {
-      setError("Erro ao enviar código OTP. Tente novamente.");
-      return;
-    }
-
+const sendOtp = async () => {
+  setError('');
+  setSuccess('');
+  if (!newEmail) {
+    setError('Digite o novo e-mail.');
+    return;
+  }
+  try {
+    await api.post('/auth/send-email-change-otp', { newEmail });
     setOtpSent(true);
-    setSuccess("Código OTP enviado para o novo e-mail.");
-  };
+    setSuccess('Código OTP enviado para o novo e-mail.');
+  } catch (err: any) {
+    setError(err.response?.data?.message || 'Erro ao enviar código OTP.');
+  }
+};
 
-  const verifyOtp = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-
-    // Aqui você pode validar o OTP com a lógica de verificação adequada
-    // Se o OTP for válido, atualize o e-mail do usuário
-
-    const { error: updateError } = await supabase.auth.updateUser({
-      email: newEmail,
-    });
-
-    if (updateError) {
-      setError(updateError.message);
-      return;
-    }
-
-    setSuccess("E-mail atualizado com sucesso! Faça login novamente.");
-    setNewEmail("");
-    setOtp("");
-
-    await supabase.auth.signOut();
-    router.push("/signin");
-  };
+const verifyOtp = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setError('');
+  setSuccess('');
+  if (!otp) {
+    setError('Digite o código OTP.');
+    return;
+  }
+  try {
+    await api.post('/auth/verify-email-change', { newEmail, otp });
+    setSuccess('E-mail atualizado com sucesso! Faça login novamente.');
+    setNewEmail('');
+    setOtp('');
+    await api.post('/auth/logout'); // se for o caso
+    router.push('/signin');
+  } catch (err: any) {
+    setError(err.response?.data?.message || 'Erro ao validar OTP.');
+  }
+};
 
   if (!session) {
     return (
