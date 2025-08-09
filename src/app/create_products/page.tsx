@@ -4,10 +4,10 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/utils/api"; // troca supabase por api
 import Image from "next/image";
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import Side_Seller_Dashboard from '@/components/sideSellerdashboard';
 import { FiArrowLeft } from "react-icons/fi";
-import Loadingpage from "../../loadingpages/loadingpage";
+import Loadingpage from "@/loadingpages/loadingpage";
 
 const Create_Products = () => {
   const router = useRouter();
