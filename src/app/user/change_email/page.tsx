@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import api from '@/utils/api';
 import { FiArrowLeft } from "react-icons/fi";
 import Sideprofile from "@/components/sideprofile";
-import Loadingpage from "../../../loadingpages/loadingpage";
+import Loadingpage from "@/loadingpages/loadingpage";
 
 const ChangeEmail = () => {
   const router = useRouter();
