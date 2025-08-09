@@ -1,7 +1,7 @@
 "use client";
 import { FaShoppingBag, FaShoppingCart, FaChartBar, FaHome, FaSignOutAlt, FaCog, FaUser } from "react-icons/fa";
-import { useSidebar } from "../context/sidebarcontext";
-import { useAuth } from "../hooks/useAuth";
+import { useSidebar } from "@/context/sidebarcontext";
+import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 
 export default function Sidebar() {
