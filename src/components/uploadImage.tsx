@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import supabase from "../utils/supabase";
+import api from "@/utils/api";
 import Image from "next/image";
 
 export default function UploadImage() {
@@ -22,24 +22,20 @@ export default function UploadImage() {
     try {
       setUploading(true);
 
-      const fileExt = image.name.split(".").pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = fileName;
+      const formData = new FormData();
+      formData.append("file", image);
 
-      const { error } = await supabase.storage
-        .from("korddyfire/uploads")
-        .upload(filePath, image);
+      // Post do arquivo via multipart/form-data para o backend
+      const response = await api.post("/uploads", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-      if (error) throw error;
-
-      const { data: publicUrlData } = supabase.storage
-        .from("korddyfire/uploads")
-        .getPublicUrl(filePath);
-
-      setImageUrl(publicUrlData.publicUrl);
+      // Backend deve retornar { imageUrl: "url pública da imagem" }
+      setImageUrl(response.data.imageUrl);
       alert("Imagem enviada com sucesso!");
     } catch (error) {
-      console.error("Erro ao enviar imagem:", (error as Error).message);
+      console.error("Erro ao enviar imagem:", error);
+      alert("Falha no upload da imagem");
     } finally {
       setUploading(false);
     }
