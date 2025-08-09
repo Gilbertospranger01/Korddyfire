@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/utils/api";
 import { useAuth } from "@/hooks/useAuth";
-import Loadingpage from "../../../loadingpages/loadingpage";
+import Loadingpage from "@/loadingpages/loadingpage";
 import { FiArrowLeft } from "react-icons/fi";
 import Sideprofile from "@/components/sideprofile";
 import Image from "next/image";
