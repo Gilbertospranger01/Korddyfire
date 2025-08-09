@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import InputSearch from "../../components/input-search";
-import supabase from "../../utils/supabase";
+import api from "@/utils/api";
 
 type Product = {
   name: string;
@@ -19,18 +19,19 @@ const Home: React.FC = () => {
     if (!searchTerm.trim()) return;
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .ilike("name", `%${searchTerm}%`);
+    try {
+      // Supondo que seu backend tenha um endpoint que faz o filtro por nome
+      const response = await api.get("/products", {
+        params: { name_like: searchTerm }, // exemplo: query string para filtro parcial
+      });
 
-    if (error) {
+      setResults(response.data);
+    } catch (error) {
       console.error("Erro ao buscar dados:", error);
-    } else {
-      setResults(data);
+      setResults([]);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
