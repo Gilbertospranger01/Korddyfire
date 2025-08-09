@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api from '@/utils/api';
-import InputPassword from "@/components/ui/input-password";
+import Input from "@/components/ui/input";
 import { FiArrowLeft } from "react-icons/fi";
 import Sideprofile from "@/components/sideprofile";
 import Loadingpage from "@/loadingpages/loadingpage";
@@ -125,7 +125,7 @@ const handleChange_Password = async (e: React.FormEvent) => {
               )}
 
               <div className="mb-4">
-                <InputPassword
+                <Input
                   name="newPassword"
                   label="New Password"
                   placeholder="Create a password"
@@ -136,7 +136,7 @@ const handleChange_Password = async (e: React.FormEvent) => {
               </div>
 
               <div className="mb-4">
-                <InputPassword
+                <Input
                   name="confirmPassword"
                   label="Confirm Password"
                   placeholder="Confirm your password"
