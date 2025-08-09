@@ -6,12 +6,12 @@ import { FiPlus, FiArrowUpRight, FiSend, FiArrowLeft, } from 'react-icons/fi';
 import { FaCheckCircle, FaClock, FaTimesCircle } from 'react-icons/fa';
 import api from '@/utils/api';  // seu axios configurado
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import Image from 'next/image';
 import { JSX } from 'react/jsx-dev-runtime';
 import { BiMoneyWithdraw } from 'react-icons/bi';
-import Side_Seller_Dashboard from '../../components/sideSellerdashboard';
-import Loadingpage from '../../loadingpages/loadingpage';
+import Side_Seller_Dashboard from '@/components/sideSellerdashboard';
+import Loadingpage from '@/loadingpages/loadingpage';
 
 interface Transaction {
   id: number;
