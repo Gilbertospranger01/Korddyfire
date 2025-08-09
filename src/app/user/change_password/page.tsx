@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api from '@/utils/api';
-import InputPassword from "../../../components/ui/input-password";
+import InputPassword from "@/components/ui/input-password";
 import { FiArrowLeft } from "react-icons/fi";
 import Sideprofile from "@/components/sideprofile";
-import Loadingpage from "../../../loadingpages/loadingpage";
-import { useAuth } from "../../../hooks/useAuth";
+import Loadingpage from "@/loadingpages/loadingpage";
+import { useAuth } from "@/hooks/useAuth";
 
 const Change_Password = () => {
   const router = useRouter();
