@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaGithub, FaLock } from "react-icons/fa";
-import BackgroundImage from "../../components/backgroundimage";
+import BackgroundImage from "@/components/backgroundimage";
 import Loadingconnection from "@/loadingpages/loadingconnection";
 import api from "@/utils/api";
 import Input from "@/components/ui/input";
