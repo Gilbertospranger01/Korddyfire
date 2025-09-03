@@ -63,7 +63,7 @@ const handleRequestCard = async () => {
     setCards([res.data.card]); // ou `res.data.cards` conforme backend
     setError(null);
     alert("Cartão solicitado com sucesso!");
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("❌ Erro ao solicitar cartão:", err);
 
     const apiError = err.response?.data?.error;
