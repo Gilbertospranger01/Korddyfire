@@ -121,7 +121,6 @@ const ChangePassword = () => {
               <div className="mb-4">
                 <Input
                   name="currentPassword"
-                  label="Current Password"
                   placeholder="Enter your current password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
@@ -133,7 +132,6 @@ const ChangePassword = () => {
             <div className="mb-4">
               <Input
                 name="newPassword"
-                label="New Password"
                 placeholder="Create a password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -144,7 +142,6 @@ const ChangePassword = () => {
             <div className="mb-4">
               <Input
                 name="confirmPassword"
-                label="Confirm Password"
                 placeholder="Confirm your password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
