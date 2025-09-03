@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiArrowLeft } from 'react-icons/fi';
 import Image from 'next/image';
@@ -9,15 +9,75 @@ import Sideprofile from '@/components/sideprofile';
 import Loadingpage from '@/loadingpages/loadingpage';
 import api from '@/utils/api';
 
+interface UserData {
+  username: string;
+  name: string;
+  email: string;
+  nationality: string;
+  phone: string;
+  birthdate: string;
+  gender: string;
+  picture_url: string;
+}
+
+interface ApiError {
+  response?: { data?: { error?: string } };
+}
 
 const Profile = () => {
   const router = useRouter();
   const { session } = useAuth();
+
   const [loading, setLoading] = useState(false);
-  const [userData, setUserData] = useState({
-    username: '', name: '', email: '', nationality: '', phone: '',
-    birthdate: '', gender: '', picture_url: ''
+  const [userData, setUserData] = useState<UserData>({
+    username: '',
+    name: '',
+    email: '',
+    nationality: '',
+    phone: '',
+    birthdate: '',
+    gender: '',
+    picture_url: '',
   });
+
+  const isApiError = (err: unknown): err is ApiError =>
+    typeof err === 'object' && err !== null && 'response' in err;
+
+  const fetchUserData = useCallback(async () => {
+    if (!session?.user?.id) return;
+
+    setLoading(true);
+    try {
+      const response = await api.get(`/user/`);
+
+      const formatDate = (dateString: string) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('pt-BR');
+      };
+
+      setUserData({
+        username: response.data.username || '',
+        name: response.data.name || '',
+        email: response.data.email || '',
+        nationality: response.data.nationality || '',
+        phone: response.data.phone || '',
+        birthdate: formatDate(response.data.birthdate),
+        gender: response.data.gender || '',
+        picture_url: response.data.picture_url || '',
+      });
+    } catch (err: unknown) {
+      if (isApiError(err)) {
+        console.error('Erro ao buscar perfil:', err.response?.data?.error);
+      } else if (err instanceof Error) {
+        console.error('Erro ao buscar perfil:', err.message);
+      } else {
+        console.error('Erro desconhecido ao buscar perfil:', err);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [session?.user?.id]);
 
   useEffect(() => {
     if (session === null) return;
@@ -25,50 +85,22 @@ const Profile = () => {
   }, [session, router]);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (!session?.id) return;
-      setLoading(true);
-      try {
-        const response = await api.get(`/user/`); 
-
-        const formatDate = (dateString: string) => {
-          if (!dateString) return '';
-          const date = new Date(dateString);
-          return date.toLocaleDateString('pt-BR');
-        };
-        setUserData({
-          username: response.data.username || '',
-          name: response.data.name || '',
-          email: response.data.email || '',
-          nationality: response.data.nationality || '',
-          phone: response.data.phone || '',
-          birthdate: formatDate(response.data.birthdate),
-          gender: response.data.gender || '',
-          picture_url: response.data.picture_url || '',
-        });
-      } catch (err: unknown) {
-        console.error("Erro ao buscar perfil:", err?.response?.data?.error || err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUserData();
-  }, [session]);
+  }, [fetchUserData]);
 
-  if (!session || loading) {
-    return <Loadingpage />;
-  }
+  if (!session || loading) return <Loadingpage />;
 
   return (
-    <div className='min-h-screen bg-gray-900 text-white'>
-
+    <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
-      <div className='fixed top-0 left-0 w-full bg-gray-950 shadow-md py-3 px-6 flex items-center z-10'>
-        <button onClick={() => router.push('/home')} className='text-gray-400 hover:text-white transition cursor-pointer'>
+      <div className="fixed top-0 left-0 w-full bg-gray-950 shadow-md py-3 px-6 flex items-center z-10">
+        <button
+          onClick={() => router.push('/home')}
+          className="text-gray-400 hover:text-white transition cursor-pointer"
+        >
           <FiArrowLeft size={24} />
         </button>
-        <h1 className='ml-4 text-lg font-semibold'>Profile</h1>
+        <h1 className="ml-4 text-lg font-semibold">Profile</h1>
       </div>
 
       {/* Sidebar */}
@@ -77,7 +109,6 @@ const Profile = () => {
       {/* Conteúdo */}
       <div className="ml-64 pt-20 px-8 pb-16">
         <div className="max-w-6xl mx-auto">
-
           {/* Foto + Info */}
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8 mb-12">
             {userData.picture_url ? (
@@ -97,7 +128,9 @@ const Profile = () => {
             <div className="text-center md:text-left">
               <h1 className="text-3xl font-bold">{userData.name || 'Sem Nome'}</h1>
               <p className="text-gray-400 text-lg mt-1">{userData.email}</p>
-              <p className="text-gray-500 mt-2">{userData.username && `@${userData.username}`}</p>
+              <p className="text-gray-500 mt-2">
+                {userData.username && `@${userData.username}`}
+              </p>
             </div>
           </div>
 
@@ -117,11 +150,11 @@ const Profile = () => {
   );
 };
 
-// ✅ Componente fora do Profile
+// Componente de campo de perfil
 const ProfileField = ({ label, value }: { label: string; value: string }) => (
   <div>
-    <label className='block text-sm font-semibold text-gray-400 mb-1'>{label}</label>
-    <div className='w-full px-4 py-3 bg-gray-800 text-gray-100 border border-gray-600 rounded-lg shadow-sm'>
+    <label className="block text-sm font-semibold text-gray-400 mb-1">{label}</label>
+    <div className="w-full px-4 py-3 bg-gray-800 text-gray-100 border border-gray-600 rounded-lg shadow-sm">
       {value || '—'}
     </div>
   </div>
