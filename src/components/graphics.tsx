@@ -120,18 +120,15 @@ setData(generateDailyData());
     return dailyData;
   };
 
-  useEffect(() => {
-    fetchData();
+   useEffect(() => {
+fetchData();
 
-    socket.on("update-graph", fetchData);
+socket.on("update-graph", fetchData);
 
-    // A lógica realtime do Supabase deve ser substituída por eventos Socket.IO
-    // Seu backend deve emitir esses eventos quando houver update em sales ou purchasing
-
-    return () => {
-      socket.off("update-graph", fetchData);
-    };
-  }, []);
+return () => {
+socket.off("update-graph", fetchData);
+};
+}, [fetchData]);
 
   function formatNumber(value: number): string {
     if (value >= 1_000_000_000_000) return (value / 1_000_000_000_000).toFixed(1) + "T";
