@@ -77,7 +77,7 @@ const handleChange_Password = async (e: React.FormEvent) => {
     // Desloga e redireciona
     await api.post('/auth/logout'); // opcional, dependendo da sua API
     router.push('/signin');
-  } catch (error: any) {
+  } catch (error: unknown) {
     setError(error.response?.data?.message || "Ocorreu um erro inesperado.");
     setIsSubmitting(false);
   }
