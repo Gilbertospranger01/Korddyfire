@@ -113,7 +113,7 @@ const handleChange_Password = async (e: React.FormEvent) => {
             <form onSubmit={handleChange_Password}>
               {!isSocialLogin && (
                 <div className="mb-4">
-                  <InputPassword
+                  <Input
                     name="currentPassword"
                     label="Current Password"
                     placeholder="Enter your current password"
