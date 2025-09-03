@@ -8,6 +8,11 @@ import { FiArrowLeft } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import Loadingpage from '@/loadingpages/loadingpage';
 
+// Tipagem para o user_metadata
+type UserMetadata = {
+  name?: string;
+  avatar_url?: string;
+};
 
 const Seller_Dashboard = () => {
   const { session } = useAuth();
@@ -15,29 +20,35 @@ const Seller_Dashboard = () => {
 
   const user = useMemo(() => {
     if (!session?.user) return null;
+
+    // Garante que o TS reconheça os campos do metadata
+    const metadata = session.user.user_metadata as UserMetadata;
+
     return {
       id: session.user.id,
-      name: session.user.user_metadata?.name || 'User',
-      picture: session.user.user_metadata?.avatar_url || null,
+      name: metadata?.name || 'User',
+      picture: metadata?.avatar_url || null,
     };
   }, [session]);
 
   if (!session) {
-    return (
-      <Loadingpage />
-    );
+    return <Loadingpage />;
   }
 
   return (
     <div className="min-h-screen bg-gray-900 text-white overflow-hidden">
       {/* Header fixo no topo */}
-      <header className="flex fixed w-full justify-between z-99 items-center p-4 bg-gray-800 shadow-md border-b border-gray-400">
+      <header className="flex fixed w-full justify-between z-50 items-center p-4 bg-gray-800 shadow-md border-b border-gray-400">
         <div className="flex items-center">
-          <button onClick={() => router.push('/home')} className='text-gray-400 hover:text-white transition cursor-pointer'>
+          <button
+            onClick={() => router.push('/home')}
+            className="text-gray-400 hover:text-white transition cursor-pointer"
+          >
             <FiArrowLeft size={24} />
           </button>
           <div className="text-2xl font-bold pl-8">Korddyfire</div>
         </div>
+
         {user && (
           <div className="flex items-center gap-3">
             <span className="text-sm">{user.name}</span>
