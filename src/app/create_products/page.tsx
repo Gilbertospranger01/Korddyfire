@@ -9,6 +9,21 @@ import Side_Seller_Dashboard from '@/components/sideSellerdashboard';
 import { FiArrowLeft } from "react-icons/fi";
 import Loadingpage from "@/loadingpages/loadingpage";
 
+interface UserMetadata {
+  name?: string;
+  avatar_url?: string;
+  user_id?: string;
+}
+
+interface AuthUser {
+  id: string;
+  user_metadata?: UserMetadata;
+}
+
+interface Session {
+  user?: AuthUser;
+}
+
 const Create_Products = () => {
   const router = useRouter();
   const [product, setProduct] = useState({
@@ -25,7 +40,7 @@ const Create_Products = () => {
   const [preview, setPreview] = useState<string | null>(null);
   const [digitalFile, setDigitalFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const { session } = useAuth();
+  const { session } = useAuth() as { session: Session | null };
 
   const user = useMemo(() => {
     if (!session?.user) return null;
