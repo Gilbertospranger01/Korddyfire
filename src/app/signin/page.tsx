@@ -8,61 +8,54 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaGithub, FaLock } from "react-icons/fa";
+
 import BackgroundImage from "@/components/backgroundimage";
 import Loadingconnection from "@/loadingpages/loadingconnection";
 import api from "@/utils/api";
 import Input from "@/components/ui/input";
 
-
-function Signin() {
+export default function Signin() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isOnline, setIsOnline] = useState(true);
 
+  // Atualiza formulário
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  // Login com email/senha
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
     try {
-      await api.post("/signin", {
-        email: formData.email,
-        password: formData.password,
-      });
-
-
-      // Redireciona após login bem-sucedido
+      await api.post("/signin", formData);
       router.push("/home");
     } catch (err: unknown) {
-  if (err instanceof AxiosError) {
-    setError(err.response?.data?.error || "Erro ao fazer login.");
-  } else {
-    setError("Erro ao fazer login.");
-  }
-};
-
-  const handleOAuthLogin = async (provider: "google" | "facebook" | "github") => {
-    try {
-      await signIn(provider, { callbackUrl: "/home" });
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("OAuth login failed:", error.message);
-        setError(error.message);
+      if (err instanceof AxiosError) {
+        setError(err.response?.data?.error || "Erro ao fazer login.");
       } else {
-        setError("Erro desconhecido ao fazer login.");
+        setError("Erro ao fazer login.");
       }
     }
   };
 
+  // Login OAuth
+  const handleOAuthLogin = async (provider: "google" | "facebook" | "github") => {
+    try {
+      await signIn(provider, { callbackUrl: "/home" });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro desconhecido ao fazer login.");
+    }
+  };
+
+  // Detecta status online/offline
   useEffect(() => {
     const updateOnlineStatus = () => setIsOnline(navigator.onLine);
-    updateOnlineStatus();
     window.addEventListener("online", updateOnlineStatus);
     window.addEventListener("offline", updateOnlineStatus);
+    updateOnlineStatus();
     return () => {
       window.removeEventListener("online", updateOnlineStatus);
       window.removeEventListener("offline", updateOnlineStatus);
@@ -73,7 +66,8 @@ function Signin() {
 
   return (
     <div className="flex w-full h-screen bg-gray-100 overflow-hidden">
-      <div className="w-1/2 h-full flex relative">
+      {/* Formulário */}
+      <div className="w-1/2 h-full relative flex">
         <motion.div
           initial={{ x: "-100%", opacity: 0 }}
           animate={{ x: "0%", opacity: 1 }}
@@ -92,7 +86,7 @@ function Signin() {
                 value={formData.email}
                 onChange={handleChange}
                 aria-label="Email"
-                className="bg-gray-800 shadow appearance-none border rounded w-full py-3 px-4 text-white leading-tight focus:outline-none focus:shadow-outline"
+                className="bg-gray-800 shadow border rounded w-full py-3 px-4 text-white focus:outline-none focus:shadow-outline"
                 placeholder="Digite seu email"
                 required
               />
@@ -102,9 +96,9 @@ function Signin() {
               name="password"
               icon={<FaLock />}
               value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-73 mb-3"
-              eye={true}
+              onChange={handleChange}
+              className="w-full mb-3"
+              eye
               placeholder="Digite sua senha"
               required
             />
@@ -118,48 +112,32 @@ function Signin() {
               </p>
               <button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 w-full rounded focus:outline-none focus:shadow-outline cursor-pointer"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 w-full rounded focus:outline-none focus:shadow-outline"
               >
                 Entrar
               </button>
             </div>
           </form>
 
-          {error && (
-            <p className="text-red-500 text-sm mt-2" role="alert">
-              {error}
-            </p>
-          )}
+          {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
           <p className="text-center text-gray-400 text-sm mt-4">
             Não tem uma conta?{" "}
-            <Link href="/signup">
-              <span className="text-blue-400 hover:text-blue-600">Criar conta</span>
+            <Link href="/signup" className="text-blue-400 hover:text-blue-600">
+              Criar conta
             </Link>
           </p>
 
           <div className="flex flex-col items-center mt-4 mb-10">
             <p className="text-gray-600 text-sm mb-2">Ou entre com</p>
             <div className="flex space-x-6">
-              <button
-                onClick={() => handleOAuthLogin("google")}
-                aria-label="Entrar com Google"
-                className="text-white"
-              >
+              <button onClick={() => handleOAuthLogin("google")} className="text-white" aria-label="Entrar com Google">
                 <FcGoogle size={30} />
               </button>
-              <button
-                onClick={() => handleOAuthLogin("facebook")}
-                aria-label="Entrar com Facebook"
-                className="text-blue-600"
-              >
+              <button onClick={() => handleOAuthLogin("facebook")} className="text-blue-600" aria-label="Entrar com Facebook">
                 <FaFacebook size={30} />
               </button>
-              <button
-                onClick={() => handleOAuthLogin("github")}
-                aria-label="Entrar com GitHub"
-                className="text-white"
-              >
+              <button onClick={() => handleOAuthLogin("github")} className="text-white" aria-label="Entrar com GitHub">
                 <FaGithub size={30} />
               </button>
             </div>
@@ -167,11 +145,10 @@ function Signin() {
         </motion.div>
       </div>
 
-      <div className="w-1/2 h-full flex flex-col justify-center items-center text-white bg-cover bg-center overflow-hidden">
+      {/* Background */}
+      <div className="w-1/2 h-full flex justify-center items-center text-white bg-cover bg-center overflow-hidden">
         <BackgroundImage />
       </div>
     </div>
   );
 }
-
-export default Signin;
