@@ -26,7 +26,7 @@ function LoadingConnection() {
       </div>
 
       <p className="mt-3 text-gray-300 text-sm md:text-base max-w-xl">
-        It looks like you're offline. Please check your Wi-Fi or mobile data connection and try again. Korddyfire needs internet access to work properly.
+        It looks like you&#39;re offline. Please check your Wi-Fi or mobile data connection and try again. Korddyfire needs internet access to work properly.
       </p>
 
       <p className="mt-4 text-gray-400 text-xs italic">
