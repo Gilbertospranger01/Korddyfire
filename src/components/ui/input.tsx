@@ -3,7 +3,6 @@ import { InputHTMLAttributes, ReactNode, useState } from "react";
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   icon?: ReactNode;
   eye?: boolean;
-  id?: string;
   name?: string;
   onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void;
   value?: string;
@@ -41,7 +40,6 @@ const Input: React.FC<InputProps> = ({
       <input
         className={`bg-transparent mt-4 outline-none flex-1 ${className}`}
         type={inputType}
-        id="password"
         onFocus={onFocus}
         name={name}
         onChange={onChange}
