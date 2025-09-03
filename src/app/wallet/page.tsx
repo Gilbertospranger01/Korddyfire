@@ -2,14 +2,14 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { FiPlus, FiArrowUpRight, FiSend, FiArrowLeft, } from 'react-icons/fi';
+import { FiPlus, FiArrowUpRight, FiSend, FiArrowLeft } from 'react-icons/fi';
 import { FaCheckCircle, FaClock, FaTimesCircle } from 'react-icons/fa';
-import api from '@/utils/api';  // seu axios configurado
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
-import Image from 'next/image';
-import { JSX } from 'react/jsx-dev-runtime';
 import { BiMoneyWithdraw } from 'react-icons/bi';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+
+import api from '@/utils/api';
+import { useAuth } from '@/hooks/useAuth';
 import Side_Seller_Dashboard from '@/components/sideSellerdashboard';
 import Loadingpage from '@/loadingpages/loadingpage';
 
@@ -21,41 +21,47 @@ interface Transaction {
   status: 'pending' | 'completed' | 'failed';
 }
 
+interface User {
+  id: string;
+  name: string;
+  picture: string | null;
+}
+
 const Wallet = () => {
   const [balance, setBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const { session } = useAuth();
   const router = useRouter();
 
-  const user = useMemo(() => {
+  const user: User | null = useMemo(() => {
     if (!session?.user) return null;
+    const { id, user_metadata } = session.user as {
+      id: string;
+      user_metadata?: { name?: string; avatar_url?: string };
+    };
     return {
-      id: session.user.id,
-      name: session.user.user_metadata?.name || 'User',
-      picture: session.user.user_metadata?.avatar_url || null,
+      id,
+      name: user_metadata?.name || 'User',
+      picture: user_metadata?.avatar_url || null,
     };
   }, [session]);
 
+  useEffect(() => {
+    if (!user) return;
 
-useEffect(() => {
-  if (!user) return;
+    const fetchWalletData = async () => {
+      try {
+        const response = await api.get(`/wallets?userId=${user.id}`);
+        const data = response.data;
+        setBalance(data.balance ?? 0);
+        setTransactions(data.wallet_transactions ?? []);
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+      }
+    };
 
-  const fetchWalletData = async () => {
-    try {
-      // Supõe que seu backend retorna algo assim:
-      // { balance: number, wallet_transactions: Transaction[] }
-      const response = await api.get(`/wallets?userId=${user.id}`);
-      const data = response.data;
-
-      setBalance(data.balance || 0);
-      setTransactions(data.wallet_transactions || []);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-    }
-  };
-
-  fetchWalletData();
-}, [user]);
+    fetchWalletData();
+  }, [user]);
 
   const handleNavigation = (path: string) => {
     if (!user) {
@@ -65,18 +71,17 @@ useEffect(() => {
     router.push(path);
   };
 
-  if (!session) {
-    return (
-      <Loadingpage />
-    );
-  }
+  if (!session) return <Loadingpage />;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white overflow-hidden">
       {/* Header fixo no topo */}
-      <header className="flex fixed w-full justify-between z-99 items-center p-4 bg-gray-800 shadow-md border-b border-gray-400">
+      <header className="flex fixed w-full justify-between z-50 items-center p-4 bg-gray-800 shadow-md border-b border-gray-400">
         <div className="flex items-center">
-          <button onClick={() => router.push('/home')} className='text-gray-400 hover:text-white transition cursor-pointer'>
+          <button
+            onClick={() => router.push('/home')}
+            className="text-gray-400 hover:text-white transition cursor-pointer"
+          >
             <FiArrowLeft size={24} />
           </button>
           <div className="text-2xl font-bold pl-8">Korddyfire</div>
@@ -113,19 +118,30 @@ useEffect(() => {
               </motion.p>
             </motion.div>
 
-            <motion.div className="bg-gray-800 p-8 rounded-xl space-y-4 w-135 ">
+            <motion.div className="bg-gray-800 p-8 rounded-xl space-y-4 w-135">
               <h3 className="text-lg font-semibold">Quick Actions</h3>
-              <div className='flex gap-4'>
-                <QuickActionButton icon={<FiPlus />} label="Top up" onClick={() => handleNavigation('/addmoney')} />
+              <div className="flex gap-4">
+                <QuickActionButton
+                  icon={<FiPlus />}
+                  label="Top up"
+                  onClick={() => handleNavigation('/addmoney')}
+                />
                 <QuickActionButton icon={<BiMoneyWithdraw />} label="Withdraw" />
               </div>
-              <div className='flex gap-4'>
+              <div className="flex gap-4">
                 <QuickActionButton icon={<FiSend />} label="Send" />
                 <QuickActionButton icon={<FiPlus />} label="Express" />
               </div>
-              <div className='flex gap-4'>
-                <QuickActionButton icon={<FiArrowUpRight />} label="Pay" />
-                <QuickActionButton icon={<FiPlus />} label="Visa" onClick={() => handleNavigation('/visa')} />
+              <div className="flex gap-4">
+                <QuickActionButton
+                  icon={<FiArrowUpRight />}
+                  label="Pay"
+                />
+                <QuickActionButton
+                  icon={<FiPlus />}
+                  label="Visa"
+                  onClick={() => handleNavigation('/visa')}
+                />
               </div>
             </motion.div>
           </section>
@@ -137,22 +153,28 @@ useEffect(() => {
                 {transactions.length === 0 ? (
                   <p className="text-gray-400">No transactions yet</p>
                 ) : (
-                  transactions.map((txn) => (
-                    <TransactionItem key={txn.id} txn={txn} />
-                  ))
+                  transactions.map((txn) => <TransactionItem key={txn.id} txn={txn} />)
                 )}
               </motion.div>
             </div>
           </div>
-
         </main>
       </div>
     </div>
   );
 };
 
-const QuickActionButton = ({ icon, label, onClick }: { icon: JSX.Element; label: string; onClick?: () => void }) => (
-  <button className="flex items-center gap-2 bg-green-500 hover:bg-green-700 p-3 rounded-lg w-full cursor-pointer" onClick={onClick}>
+interface QuickActionButtonProps {
+  icon: JSX.Element;
+  label: string;
+  onClick?: () => void;
+}
+
+const QuickActionButton = ({ icon, label, onClick }: QuickActionButtonProps) => (
+  <button
+    className="flex items-center gap-2 bg-green-500 hover:bg-green-700 p-3 rounded-lg w-full cursor-pointer"
+    onClick={onClick}
+  >
     {icon} {label}
   </button>
 );
