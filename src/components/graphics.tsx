@@ -98,10 +98,10 @@ try {
         setData(generateDailyData());
       }
     } catch (error) {
-      console.error("Erro ao buscar dados:", error);
-      setData(generateDailyData());
-    }
-  };
+console.error("Erro ao buscar dados:", error);
+setData(generateDailyData());
+}
+}, [daysOfWeek]);
 
   const generateDailyData = () => {
     const today = new Date();
