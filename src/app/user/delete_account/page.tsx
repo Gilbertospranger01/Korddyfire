@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { FiArrowLeft } from "react-icons/fi";
 import Sideprofile from "@/components/sideprofile";
@@ -17,7 +17,7 @@ const DeleteAccount = () => {
 
   if (!session) return <Loadingpage />;
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = useCallback(async () => {
     if (!session.user.id) {
       setError("Usuário não encontrado.");
       return;
@@ -39,34 +39,39 @@ const DeleteAccount = () => {
         router.push("/signin");
       }, 2000);
     } catch (err: unknown) {
-      // Type guard para erros Axios/JavaScript
+      // Type guard seguro para erros Axios ou JS
       let message = "Ocorreu um erro ao excluir a conta.";
+
       if (err instanceof Error) {
         message = err.message;
       } else if (
         typeof err === "object" &&
         err !== null &&
         "response" in err &&
-        (err as any).response?.data?.message
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message
       ) {
-        message = (err as any).response.data.message;
+        message = (err as { response: { data: { message: string } } }).response.data.message;
       }
+
       setError(`Erro ao excluir a conta: ${message}`);
     } finally {
       setLoading(false);
     }
-  };
+  }, [session, logout, router]);
 
   return (
-    <div>
+    <div className="min-h-screen bg-gray-900 text-white">
       {/* Cabeçalho */}
-      <button
-        onClick={() => router.push("/home")}
-        className="text-gray-400 hover:text-white transition cursor-pointer"
-        aria-label="Voltar para página inicial"
-      >
-        <FiArrowLeft size={24} />
-      </button>
+      <div className="p-4">
+        <button
+          onClick={() => router.push("/home")}
+          className="text-gray-400 hover:text-white transition cursor-pointer flex items-center gap-2"
+          aria-label="Voltar para página inicial"
+        >
+          <FiArrowLeft size={20} />
+          Voltar
+        </button>
+      </div>
 
       <Sideprofile />
 
