@@ -56,7 +56,7 @@ const Edit_Profile = () => {
           gender: response.data.gender || '',
           picture_url: response.data.picture_url || '',
         });
-      } catch (err: unknown {
+      } catch (err: unknown) {
         console.error("Erro ao buscar perfil:", err?.response?.data?.error || err.message);
       } finally {
         setLoading(false);
