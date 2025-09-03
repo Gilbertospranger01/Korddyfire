@@ -34,7 +34,7 @@ const Edit_Profile = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!session?.id) return;
+      if (!session?.user?.id) return;
       setLoading(true);
       try {
         const response = await api.get(`/user`);
