@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiArrowLeft } from "react-icons/fi";
@@ -7,15 +8,17 @@ import { useAuth } from "@/hooks/useAuth";
 import Loadingpage from "@/loadingpages/loadingpage";
 import api from "@/utils/api";
 
-const Delete_Account = () => {
+const DeleteAccount = () => {
   const router = useRouter();
   const { session, logout } = useAuth();
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+
+  if (!session) return <Loadingpage />;
 
   const handleDeleteAccount = async () => {
-    if (!session?.user.id) {
+    if (!session.user.id) {
       setError("Usuário não encontrado.");
       return;
     }
@@ -31,48 +34,63 @@ const Delete_Account = () => {
 
       setSuccess("Conta excluída com sucesso.");
       await logout();
+
       setTimeout(() => {
         router.push("/signin");
       }, 2000);
     } catch (err: unknown) {
-      setError("Erro ao excluir a conta: " + (err.response?.data?.message || err.message));
+      // Type guard para erros Axios/JavaScript
+      let message = "Ocorreu um erro ao excluir a conta.";
+      if (err instanceof Error) {
+        message = err.message;
+      } else if (
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        (err as any).response?.data?.message
+      ) {
+        message = (err as any).response.data.message;
+      }
+      setError(`Erro ao excluir a conta: ${message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!session) return <Loadingpage />;
-
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div>
       {/* Cabeçalho */}
-      <div className="fixed top-0 left-0 w-full bg-gray-950 shadow-md py-3 px-6 flex items-center z-10">
-        <button
-          onClick={() => router.push("/home")}
-          className="text-gray-400 hover:text-white transition cursor-pointer"
-          aria-label="Voltar para página inicial"
-        >
-          <FiArrowLeft size={24} />
-        </button>
-        <h1 className="ml-4 text-lg font-semibold">Delete your account</h1>
-      </div>
+      <button
+        onClick={() => router.push("/home")}
+        className="text-gray-400 hover:text-white transition cursor-pointer"
+        aria-label="Voltar para página inicial"
+      >
+        <FiArrowLeft size={24} />
+      </button>
 
       <Sideprofile />
 
-      <div className="ml-140 pt-20 px-8 pb-16 items-center justify-center">
-        <div className="w-full max-w-md p-8 rounded shadow-md">
-          <h2 className="text-2xl font-semibold text-center mb-4">Confirm Account Deletion</h2>
+      <div className="ml-36 pt-20 px-8 pb-16 flex items-center justify-center">
+        <div className="w-full max-w-md p-8 rounded shadow-md bg-gray-800">
+          <h2 className="text-2xl font-semibold text-center mb-4">
+            Confirm Account Deletion
+          </h2>
 
           {error && (
-            <div className="bg-red-500 text-white p-3 mb-4 rounded-md text-center">{error}</div>
+            <div className="bg-red-500 text-white p-3 mb-4 rounded-md text-center">
+              {error}
+            </div>
           )}
 
           {success && (
-            <div className="bg-green-500 text-white p-3 mb-4 rounded-md text-center">{success}</div>
+            <div className="bg-green-500 text-white p-3 mb-4 rounded-md text-center">
+              {success}
+            </div>
           )}
 
           <p className="text-center mb-6 text-gray-300">
-            Are you sure you want to permanently delete your account? This action cannot be undone.
+            Are you sure you want to permanently delete your account? This
+            action cannot be undone.
           </p>
 
           <div className="flex justify-center gap-4">
@@ -96,4 +114,4 @@ const Delete_Account = () => {
   );
 };
 
-export default Delete_Account;
+export default DeleteAccount;
