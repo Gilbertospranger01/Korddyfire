@@ -2,8 +2,8 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "@/utils/api"; // substitui supabase por api
 import Image from "next/image";
-import { useAuth } from '@/hooks/useAuth';
-import Side_Seller_Dashboard from '@/components/sideSellerdashboard';
+import { useAuth } from "@/hooks/useAuth";
+import Side_Seller_Dashboard from "@/components/sideSellerdashboard";
 import { FiArrowLeft } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import Loadingpage from "@/loadingpages/loadingpage";
@@ -16,6 +16,11 @@ type Product = {
   price: number;
 };
 
+type UserMetadata = {
+  name?: string;
+  avatar_url?: string;
+};
+
 function Products() {
   const [product, setProduct] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,23 +30,20 @@ function Products() {
 
   const user = useMemo(() => {
     if (!session?.user) return null;
+
+    const metadata = session.user.user_metadata as UserMetadata;
+
     return {
       id: session.user.id,
-      name: session.user.user_metadata?.name || 'User',
-      picture: session.user.user_metadata?.avatar_url || null,
+      name: metadata?.name || "User",
+      picture: metadata?.avatar_url || null,
     };
   }, [session]);
 
   useEffect(() => {
-    async function fetchUser() {
-      // Aqui você vai precisar adaptar essa parte pra pegar o userId do seu backend
-      // Se não tiver endpoint pra isso, você pode pegar do session direto
-      if (session?.user?.id) {
-        setUserId(session.user.id);
-      }
+    if (session?.user?.id) {
+      setUserId(session.user.id);
     }
-
-    fetchUser();
   }, [session]);
 
   useEffect(() => {
@@ -69,9 +71,12 @@ function Products() {
   return (
     <div className="min-h-screen bg-gray-900 text-white overflow-hidden">
       {/* Header fixo no topo */}
-      <header className="flex fixed w-full justify-between z-99 items-center p-4 bg-gray-800 shadow-md border-b border-gray-400">
+      <header className="flex fixed w-full justify-between z-50 items-center p-4 bg-gray-800 shadow-md border-b border-gray-400">
         <div className="flex items-center">
-          <button onClick={() => router.push('/home')} className='text-gray-400 hover:text-white transition cursor-pointer'>
+          <button
+            onClick={() => router.push("/home")}
+            className="text-gray-400 hover:text-white transition cursor-pointer"
+          >
             <FiArrowLeft size={24} />
           </button>
           <div className="text-2xl font-bold pl-8">Korddyfire</div>
@@ -97,16 +102,23 @@ function Products() {
 
         {/* Main content */}
         <main className="flex-1 p-4 mt-20 ml-60">
-          <h1 className="text-2xl font-bold text-center mb-6">Meus Produtos</h1>
+          <h1 className="text-2xl font-bold text-center mb-6">
+            Meus Produtos
+          </h1>
 
           {loading ? (
             <p className="text-center text-gray-400">Carregando...</p>
           ) : product.length === 0 ? (
-            <p className="text-center text-red-500">Nenhum produto encontrado.</p>
+            <p className="text-center text-red-500">
+              Nenhum produto encontrado.
+            </p>
           ) : (
             <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {product.map((product) => (
-                <li key={product.id} className="bg-gray-700 p-4 rounded-lg shadow-lg">
+                <li
+                  key={product.id}
+                  className="bg-gray-700 p-4 rounded-lg shadow-lg"
+                >
                   <Image
                     src={product.image || "/placeholder.jpg"}
                     width={200}
@@ -118,7 +130,10 @@ function Products() {
                   <h2 className="text-xl mt-2">{product.name}</h2>
                   <p className="text-gray-400">{product.description}</p>
                   <p className="text-yellow-400">
-                    {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(product.price)}
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    }).format(product.price)}
                   </p>
                 </li>
               ))}
