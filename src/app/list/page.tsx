@@ -47,7 +47,6 @@ function List() {
   const unslugify = (slug: string) => {
     return slug.replace(/-/g, " ");
   };
-  const searchQuery = productName ? unslugify(productName) : "";
 
   useEffect(() => {
   async function fetchProducts() {
