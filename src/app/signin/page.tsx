@@ -27,7 +27,7 @@ function Signin() {
     setError(null);
 
     try {
-      const response = await api.post("/signin", {
+      await api.post("/signin", {
         email: formData.email,
         password: formData.password,
       });
