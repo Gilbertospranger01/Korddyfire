@@ -63,7 +63,7 @@ const Home = () => {
   useEffect(() => {
     fetchUser();
     fetchProducts();
-  }, []);
+  }, [fetchUser, fetchProducts]);
 
   const formatPrice = (value: number) =>
     new Intl.NumberFormat("en-US", {
