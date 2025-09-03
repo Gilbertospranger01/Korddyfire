@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiArrowLeft, FiUpload, FiTrash2 } from 'react-icons/fi';
 import Image from 'next/image';
@@ -10,13 +10,32 @@ import Sideprofile from '@/components/sideprofile';
 import Loadingpage from '@/loadingpages/loadingpage';
 import api from '@/utils/api';
 
+interface UserData {
+  username: string;
+  name: string;
+  email: string;
+  nationality: string;
+  phone: string;
+  birthdate: string;
+  gender: string;
+  picture_url: string;
+}
+
+interface ApiError {
+  response?: {
+    data?: {
+      error?: string;
+    };
+  };
+}
+
 const Edit_Profile = () => {
   const router = useRouter();
   const { session } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
-  const [userData, setUserData] = useState({
+  const [userData, setUserData] = useState<UserData>({
     username: '',
     name: '',
     email: '',
@@ -27,44 +46,59 @@ const Edit_Profile = () => {
     picture_url: '',
   });
 
+  // Type guard para erros da API
+  const isApiError = (err: unknown): err is ApiError =>
+    typeof err === 'object' && err !== null && 'response' in err;
+
+  // Redireciona se não estiver logado
   useEffect(() => {
     if (session === null) return;
     if (!session) router.push('/signin');
   }, [session, router]);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!session?.user?.id) return;
-      setLoading(true);
-      try {
-        const response = await api.get(`/user`);
-        const formatDate = (dateString: string) => {
-          if (!dateString) return '';
-          const date = new Date(dateString);
-          const day = String(date.getDate()).padStart(2, '0');
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const year = date.getFullYear();
-          return `${day}/${month}/${year}`;
-        };
-        setUserData({
-          username: response.data.username || '',
-          name: response.data.name || '',
-          email: response.data.email || '',
-          nationality: response.data.nationality || '',
-          phone: response.data.phone || '',
-          birthdate: formatDate(response.data.birthdate),
-          gender: response.data.gender || '',
-          picture_url: response.data.picture_url || '',
-        });
-      } catch (err: unknown) {
-        console.error("Erro ao buscar perfil:", err?.response?.data?.error || err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Função de fetch de usuário encapsulada em useCallback
+  const fetchUserData = useCallback(async () => {
+    if (!session?.user?.id) return;
+    setLoading(true);
 
+    try {
+      const response = await api.get(`/user`);
+
+      const formatDate = (dateString: string) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+      };
+
+      setUserData({
+        username: response.data.username || '',
+        name: response.data.name || '',
+        email: response.data.email || '',
+        nationality: response.data.nationality || '',
+        phone: response.data.phone || '',
+        birthdate: formatDate(response.data.birthdate),
+        gender: response.data.gender || '',
+        picture_url: response.data.picture_url || '',
+      });
+    } catch (err: unknown) {
+      if (isApiError(err)) {
+        console.error("Erro ao buscar perfil:", err.response?.data?.error);
+      } else if (err instanceof Error) {
+        console.error("Erro ao buscar perfil:", err.message);
+      } else {
+        console.error("Erro desconhecido ao buscar perfil:", err);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [session?.user?.id]);
+
+  useEffect(() => {
     fetchUserData();
-  }, [session]);
+  }, [fetchUserData]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -92,7 +126,13 @@ const Edit_Profile = () => {
       alert("Perfil atualizado com sucesso!");
       router.push('/user/profile');
     } catch (err: unknown) {
-      console.error("Erro ao atualizar perfil:", err?.response?.data?.error || err.message);
+      if (isApiError(err)) {
+        console.error("Erro ao atualizar perfil:", err.response?.data?.error);
+      } else if (err instanceof Error) {
+        console.error("Erro ao atualizar perfil:", err.message);
+      } else {
+        console.error("Erro desconhecido ao atualizar perfil:", err);
+      }
     } finally {
       setLoading(false);
     }
@@ -100,35 +140,33 @@ const Edit_Profile = () => {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-
-    console.log('file=', file)
+    if (!file) return;
 
     setImageUploading(true);
 
     try {
       const formData = new FormData();
-      formData.append('file', file)
+      formData.append('file', file);
 
-      console.log('formData', formData)
-      //formData.append("user_id", session.user.id);
-
-      const response = await api.post("/upload", {
-        picture_url: file,
+      // Se o backend espera multipart/form-data, use formData diretamente:
+      const response = await api.post("/upload", formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-
-      console.log("Upload response:", response.data,);
 
       setUserData((prev) => ({
         ...prev,
-        picture_url: file,
+        picture_url: response.data.picture_url || prev.picture_url,
       }));
-
-      console.log(userData)
 
       alert("Imagem de perfil atualizada com sucesso!");
     } catch (err: unknown) {
-      console.log(userData)
-      console.error("Erro ao fazer upload da imagem:", err?.response?.data?.error || err.message);
+      if (isApiError(err)) {
+        console.error("Erro ao fazer upload da imagem:", err.response?.data?.error);
+      } else if (err instanceof Error) {
+        console.error("Erro ao fazer upload da imagem:", err.message);
+      } else {
+        console.error("Erro desconhecido ao enviar a imagem:", err);
+      }
       alert("Erro ao enviar a imagem.");
     } finally {
       setImageUploading(false);
@@ -161,7 +199,13 @@ const Edit_Profile = () => {
       setUserData((prev) => ({ ...prev, picture_url: '' }));
       alert("Imagem de perfil removida com sucesso!");
     } catch (err: unknown) {
-      console.error("Erro ao remover imagem:", err?.response?.data?.error || err.message);
+      if (isApiError(err)) {
+        console.error("Erro ao remover imagem:", err.response?.data?.error);
+      } else if (err instanceof Error) {
+        console.error("Erro ao remover imagem:", err.message);
+      } else {
+        console.error("Erro desconhecido ao remover imagem:", err);
+      }
       alert("Erro ao remover a imagem.");
     } finally {
       setLoading(false);
@@ -170,7 +214,6 @@ const Edit_Profile = () => {
 
   const handleBirthdateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, '');
-
     if (value.length > 2) value = value.slice(0, 2) + '/' + value.slice(2);
     if (value.length > 5) value = value.slice(0, 5) + '/' + value.slice(5, 9);
 
@@ -261,9 +304,7 @@ const Edit_Profile = () => {
                   <PhoneInput
                     name="phone"
                     value={userData.phone}
-                    onChange={(value) =>
-                      setUserData((prev) => ({ ...prev, phone: value }))
-                    }
+                    onChange={(value) => setUserData((prev) => ({ ...prev, phone: value }))}
                   />
                 </div>
 
@@ -311,9 +352,7 @@ const Edit_Profile = () => {
                     id="gender"
                     name="gender"
                     value={userData.gender}
-                    onChange={(e) =>
-                      setUserData((prev) => ({ ...prev, gender: e.target.value }))
-                    }
+                    onChange={(e) => setUserData((prev) => ({ ...prev, gender: e.target.value }))}
                     className="w-full px-4 py-3 mt-1 mb-5 bg-gray-700 text-white border border-gray-600 rounded-lg"
                   >
                     <option value="">Selecionar</option>
@@ -332,7 +371,6 @@ const Edit_Profile = () => {
               </div>
             </form>
           </div>
-
         </div>
       </div>
     </div>
