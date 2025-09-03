@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import BackgroundImage from "@/components/backgroundimage";
 import api from "@/utils/api";
-import axios, { AxiosError, isAxiosError } from "axios";
+import { AxiosError, isAxiosError } from "axios";
 import { FaLock, FaUser } from "react-icons/fa";
 import Input from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
