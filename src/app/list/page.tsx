@@ -50,30 +50,32 @@ function List() {
   const searchQuery = productName ? unslugify(productName) : "";
 
   useEffect(() => {
-    async function fetchProducts() {
-      if (!productName) {
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        // API REST, filtro com query param 'name_like' ou 'name_contains' conforme backend
-        const response = await api.get(`products?name_like=${encodeURIComponent(searchQuery)}`);
-        setProducts(response.data);
-      } catch (err) {
-        setError("Erro ao buscar produtos.");
-        setProducts([]);
-        console.error("Erro ao buscar produtos:", err);
-      }
-
+  async function fetchProducts() {
+    if (!productName) {
       setLoading(false);
+      return;
     }
 
-    fetchProducts();
-  }, [productName]);
+    const unslugify = (slug: string) => slug.replace(/-/g, " ");
+    const searchQuery = unslugify(productName);
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await api.get(`products?name_like=${encodeURIComponent(searchQuery)}`);
+      setProducts(response.data);
+    } catch (err) {
+      setError("Erro ao buscar produtos.");
+      setProducts([]);
+      console.error("Erro ao buscar produtos:", err);
+    }
+
+    setLoading(false);
+  }
+
+  fetchProducts();
+}, [productName]);
 
   if (loading) {
     return <Loadingpage />;
