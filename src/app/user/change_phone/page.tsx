@@ -39,7 +39,7 @@ const ChangePhone = () => {
       await api.post("/user/phone/send-otp", { phone: currentPhone });
       setOtpSent(true);
       setSuccess("Código OTP enviado para o número de telefone.");
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError(e.response?.data?.message || "Erro ao enviar código OTP.");
     }
   };
@@ -55,7 +55,7 @@ const ChangePhone = () => {
       setOtp("");
       await api.post("/auth/logout");
       router.push("/signin");
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError(e.response?.data?.message || "Erro ao verificar OTP.");
     }
   };
