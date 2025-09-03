@@ -19,7 +19,6 @@ const Input: React.FC<InputProps> = ({
   onFocus,
   onChange,
   value,
-  id,
   name,
   required,
   placeholder = "",
