@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import api from '@/utils/api';  // tua camada customizada
+import api from '@/utils/api';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2025-04-30.basil',
@@ -28,8 +28,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 });
     }
 
-    // Busca Stripe Account ID via api (não supabase direto)
-    const sellerStripeAccountId = await api.profiles.getStripeAccountId(seller_id);
+    // 🔹 Busca Stripe Account ID na API (ajusta endpoint conforme teu backend expõe)
+    const { data } = await api.get<{ stripeAccountId: string }>(
+      `/profiles/${seller_id}/stripe-account`
+    );
+    const sellerStripeAccountId = data?.stripeAccountId;
 
     if (!sellerStripeAccountId) {
       return NextResponse.json(
@@ -38,6 +41,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 🔹 Cria PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency: 'usd',
@@ -45,8 +49,8 @@ export async function POST(req: NextRequest) {
       transfer_data: { destination: sellerStripeAccountId },
     });
 
-    // Registra compra via camada api
-    await api.purchasing.insertPurchase({
+    // 🔹 Registra a compra na API
+    await api.post(`/purchasing`, {
       buyer_id,
       seller_id,
       amount,
@@ -56,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ clientSecret: paymentIntent.client_secret });
   } catch (error) {
-    console.error(error);
+    console.error('Erro ao criar PaymentIntent:', error);
     return NextResponse.json(
       { error: 'Erro ao criar PaymentIntent' },
       { status: 500 }
