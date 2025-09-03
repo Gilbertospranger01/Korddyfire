@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { FiArrowLeft, FiCheckCircle } from "react-icons/fi";
-import api from "@/utils/api";
+import api, { ApiErrorResponse } from "@/utils/api";
+import axios from "axios";
 import Loadingpage from "@/loadingpages/loadingpage";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -59,8 +60,12 @@ export default function AddMoney() {
 
       alert("Dinheiro adicionado com sucesso!");
       router.push("/wallet");
-    } catch (err: any) {
-      alert(`Erro: ${err.response?.data?.error || "Tente novamente mais tarde."}`);
+    } catch (err: unknown) {
+      if (axios.isAxiosError<ApiErrorResponse>(err)) {
+        alert(`Erro: ${err.response?.data?.error || "Tente novamente mais tarde."}`);
+      } else {
+        alert("Tente novamente mais tarde.");
+      }
     } finally {
       setLoading(false);
     }
