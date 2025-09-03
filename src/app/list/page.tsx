@@ -44,10 +44,6 @@ function List() {
     }));
   };
 
-  const unslugify = (slug: string) => {
-    return slug.replace(/-/g, " ");
-  };
-
   useEffect(() => {
   async function fetchProducts() {
     if (!productName) {
