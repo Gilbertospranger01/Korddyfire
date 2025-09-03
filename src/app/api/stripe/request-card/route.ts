@@ -1,9 +1,9 @@
 // /api/stripe/request-card/route.ts
-import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
+import { NextResponse } from "next/server";
+import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: '2025-04-30.basil',
+  apiVersion: "2025-04-30.basil",
 });
 
 export async function POST(req: Request) {
@@ -12,27 +12,30 @@ export async function POST(req: Request) {
     const { userId, name, email, phone, birthdate, nationality, address, currency } = body;
 
     if (!userId || !name || !email || !phone || !birthdate || !nationality || !address || !currency) {
-      return NextResponse.json({
-        error: {
-          message: 'Campos obrigatórios faltando.',
-          type: 'validation_error',
-          statusCode: 400,
-          fields: { userId, name, email, phone, birthdate, nationality, address, currency }
-        }
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: {
+            message: "Campos obrigatórios faltando.",
+            type: "validation_error",
+            statusCode: 400,
+            fields: { userId, name, email, phone, birthdate, nationality, address, currency },
+          },
+        },
+        { status: 400 }
+      );
     }
 
-    const [day, month, year] = birthdate.split('/').map(Number);
+    const [day, month, year] = birthdate.split("/").map(Number);
 
     const cardholder = await stripe.issuing.cardholders.create({
       name,
       email,
       phone_number: phone,
-      status: 'active',
-      type: 'individual',
+      status: "active",
+      type: "individual",
       individual: {
-        first_name: name.split(' ')[0],
-        last_name: name.split(' ').slice(1).join(' ') || '',
+        first_name: name.split(" ")[0],
+        last_name: name.split(" ").slice(1).join(" ") || "",
         dob: { day, month, year },
       },
       billing: {
@@ -49,20 +52,48 @@ export async function POST(req: Request) {
     const card = await stripe.issuing.cards.create({
       cardholder: cardholder.id,
       currency,
-      type: 'virtual',
+      type: "virtual",
     });
 
-    return NextResponse.json({ message: 'Card created successfully', card }, { status: 200 });
+    return NextResponse.json({ message: "Card created successfully", card }, { status: 200 });
+  } catch (err: unknown) {
+    console.error("[ERROR]", err);
 
-  } catch (error: any) {
-    console.error("[ERROR]", error);
-    return NextResponse.json({
-      error: {
-        message: error.message || 'Erro interno ao criar cartão.',
-        type: error.type || 'server_error',
-        statusCode: 500,
-        details: error
-      }
-    }, { status: 500 });
+    if (err instanceof Stripe.errors.StripeError) {
+      return NextResponse.json(
+        {
+          error: {
+            message: err.message,
+            type: err.type,
+            statusCode: err.statusCode ?? 500,
+          },
+        },
+        { status: err.statusCode ?? 500 }
+      );
+    }
+
+    if (err instanceof Error) {
+      return NextResponse.json(
+        {
+          error: {
+            message: err.message,
+            type: "server_error",
+            statusCode: 500,
+          },
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        error: {
+          message: "Erro desconhecido ao criar cartão.",
+          type: "unknown_error",
+          statusCode: 500,
+        },
+      },
+      { status: 500 }
+    );
   }
 }
