@@ -9,32 +9,43 @@ import { FiArrowLeft } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import Loadingpage from '../../loadingpages/loadingpage';
 
+interface UserMetadata {
+  name?: string;
+  avatar_url?: string;
+}
+
+interface SessionUser {
+  id: string;
+  user_metadata?: UserMetadata;
+}
 
 const Seller_Dashboard = () => {
   const { session } = useAuth();
   const router = useRouter();
 
+  // Memoize the user object safely
   const user = useMemo(() => {
-    if (!session?.user) return null;
+    const userObj: SessionUser | undefined = session?.user;
+    if (!userObj) return null;
+
     return {
-      id: session.user.id,
-      name: session.user.user_metadata?.name || 'User',
-      picture: session.user.user_metadata?.avatar_url || null,
+      id: userObj.id,
+      name: userObj.user_metadata?.name ?? 'User',
+      picture: userObj.user_metadata?.avatar_url ?? null,
     };
   }, [session]);
 
-  if (!session) {
-    return (
-      <Loadingpage />
-    );
-  }
+  if (!session) return <Loadingpage />;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white overflow-hidden">
-      {/* Header fixo no topo */}
-      <header className="flex fixed w-full justify-between z-99 items-center p-4 bg-gray-800 shadow-md border-b border-gray-400">
+      {/* Fixed header */}
+      <header className="flex fixed w-full justify-between items-center z-50 p-4 bg-gray-800 shadow-md border-b border-gray-400">
         <div className="flex items-center">
-          <button onClick={() => router.push('/home')} className='text-gray-400 hover:text-white transition cursor-pointer'>
+          <button
+            onClick={() => router.push('/home')}
+            className="text-gray-400 hover:text-white transition cursor-pointer"
+          >
             <FiArrowLeft size={24} />
           </button>
           <div className="text-2xl font-bold pl-8">Korddyfire</div>
