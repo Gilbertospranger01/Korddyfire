@@ -32,7 +32,6 @@ function Signin() {
         password: formData.password,
       });
 
-      const { token, user } = response.data;
 
       // Redireciona após login bem-sucedido
       router.push("/home");
