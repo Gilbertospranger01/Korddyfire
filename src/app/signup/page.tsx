@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import BackgroundImage from "@/components/backgroundimage";
 import api from "@/utils/api";
+import axios, { AxiosError, isAxiosError } from "axios";
 import { FaLock, FaUser } from "react-icons/fa";
 import Input from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -59,33 +60,32 @@ function Signup() {
     }
 
     try {
-      const response = await api.post("http://localhost:4000/api/signup", {
-        email: formData.email,
-        password: formData.password,
-        name: formData.name,
-        username: formData.username,
-        terms_and_policies: !!formData.terms_and_policies,
-      });
+      try {
+  const response = await api.post("/signup", {
+    email: formData.email,
+    password: formData.password,
+    name: formData.name,
+    username: formData.username,
+    terms_and_policies: !!formData.terms_and_policies,
+  });
 
-      const { token, user } = response.data;
+  const { token, user } = response.data;
 
-      // Armazena o token
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+  localStorage.setItem("token", token);
+  localStorage.setItem("user", JSON.stringify(user));
 
-      alert("Cadastro realizado com sucesso!");
-      router.push("/signin");
+  alert("Cadastro realizado com sucesso!");
+  router.push("/signin");
 
-    } catch (error) {
-      const errorMessage = api.isAxiosError(error) && error.response?.data?.message
-        ? error.response.data.message
-        : "Erro desconhecido";
+} catch (error) {
+  const errorMessage = isAxiosError(error) && error.response?.data?.message
+    ? error.response.data.message
+    : "Erro desconhecido";
 
-      console.error("Erro de signup:", errorMessage);
-      alert(`Erro de Signup: ${errorMessage}`);
-    } finally {
-      setLoading(false);
-    }
+  console.error("Erro de signup:", errorMessage);
+  alert(`Erro de Signup: ${errorMessage}`);
+} finally {
+  setLoading(false);
   }, [formData, router]);
 
   return (
