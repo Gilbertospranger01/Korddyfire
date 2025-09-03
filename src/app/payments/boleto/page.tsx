@@ -1,6 +1,5 @@
 "use client";
 
-import Loadingpage from "@/loadingpages/loadingpage";
 import { useState } from "react";
 
 export default function BoletoPaymentPage() {
@@ -11,11 +10,6 @@ export default function BoletoPaymentPage() {
     alert("Boleto gerado com sucesso!");
   };
 
-  if (!session) {
-    return (
-      <Loadingpage />
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
