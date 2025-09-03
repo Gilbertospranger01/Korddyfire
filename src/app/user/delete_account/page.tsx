@@ -34,7 +34,7 @@ const Delete_Account = () => {
       setTimeout(() => {
         router.push("/signin");
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError("Erro ao excluir a conta: " + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
