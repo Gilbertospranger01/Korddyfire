@@ -23,7 +23,7 @@ export default function Recover_password() {
       await api.post("/auth/reset-password", { email });
       setStatus("Recovery email sent! Check your inbox.");
       setErrorStatus(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       setStatus(`Error: ${error.response?.data?.message || error.message}`);
       setErrorStatus(true);
     }
