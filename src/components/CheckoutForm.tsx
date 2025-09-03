@@ -76,7 +76,7 @@ export default function CheckoutForm({ amount, buyerId, sellerId }: CheckoutProp
       } else {
         setMessage('Algo inesperado aconteceu.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       setMessage('Erro: ' + err.message);
     } finally {
