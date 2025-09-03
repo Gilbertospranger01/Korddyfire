@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { AxiosError } from "axios";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -36,9 +37,12 @@ function Signin() {
       // Redireciona após login bem-sucedido
       router.push("/home");
     } catch (err: unknown) {
-      setError(err?.response?.data?.error || "Erro ao fazer login.");
-    }
-  };
+  if (err instanceof AxiosError) {
+    setError(err.response?.data?.error || "Erro ao fazer login.");
+  } else {
+    setError("Erro ao fazer login.");
+  }
+};
 
   const handleOAuthLogin = async (provider: "google" | "facebook" | "github") => {
     try {
