@@ -4,6 +4,7 @@ import { useRef, useEffect } from 'react';
 import { ChatMessage, User } from '@/utils/types';
 import { FaEdit, FaTrash } from 'react-icons/fa';
 import { IoSend } from 'react-icons/io5';
+import Image from 'next/image';
 
 interface ChatAreaProps {
   messages: ChatMessage[];
@@ -43,7 +44,13 @@ export default function ChatArea({
         {activeChatUser ? (
           <div className="flex items-center space-x-3">
             {activeChatUser.picture_url && (
-              <img src={activeChatUser.picture_url} alt={activeChatUser.username} className="w-10 h-10 rounded-full" />
+              <Image
+                src={activeChatUser.picture_url}
+                alt={activeChatUser.username}
+                width={40}
+                height={40}
+                className="rounded-full"
+              />
             )}
             <h2 className="text-lg">{activeChatUser.username}</h2>
             {typing.includes(activeChatUser.username) && (
@@ -74,10 +81,11 @@ export default function ChatArea({
                       {isSender ? 'Eu' : activeChatUser?.username || 'Desconhecido'}
                     </div>
                     <div
-                      className={`mb-2 flex ${isSender
-                        ? 'bg-gray-200 dark:bg-gray-700 rounded-bl-lg rounded-tr-lg rounded-tl-lg'
-                        : 'bg-gray-200 dark:bg-gray-800 rounded-br-lg rounded-tr-lg rounded-tl-lg'
-                        } p-2 shadow-sm`}
+                      className={`mb-2 flex ${
+                        isSender
+                          ? 'bg-gray-200 dark:bg-gray-700 rounded-bl-lg rounded-tr-lg rounded-tl-lg'
+                          : 'bg-gray-200 dark:bg-gray-800 rounded-br-lg rounded-tr-lg rounded-tl-lg'
+                      } p-2 shadow-sm`}
                     >
                       <div>{msg.message}</div>
 
@@ -130,6 +138,5 @@ export default function ChatArea({
         </div>
       </div>
     </div>
-
-);
+  );
 }
