@@ -20,7 +20,7 @@ export type User = {
   terms_and_policies?: boolean;
   created_at?: string | Date;
   updated_at?: string | Date;
-  [key: string]: any; 
+  [key: string]: unknown; 
 };
 
 
