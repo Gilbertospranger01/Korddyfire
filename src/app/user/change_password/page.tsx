@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/utils/api";
 import Input from "@/components/ui/input";
@@ -9,11 +9,10 @@ import Sideprofile from "@/components/sideprofile";
 import Loadingpage from "@/loadingpages/loadingpage";
 import { useAuth } from "@/hooks/useAuth";
 
-interface ApiError {
-  response?: {
-    data?: {
-      message?: string;
-    };
+interface UserSession {
+  email?: string;
+  app_metadata?: {
+    providers?: string[];
   };
 }
 
@@ -38,20 +37,21 @@ const ChangePassword = () => {
       return;
     }
 
-    setEmail(session.user.email || "");
+    const user = session.user as UserSession;
 
-    // Verifica se o usuário está logado com provedor social
+    setEmail(user.email || "");
+
     const socialProviders = ["google", "facebook", "github"];
-    const providers = session.user.app_metadata?.providers;
-    const hasSocialLogin =
-      Array.isArray(providers) &&
-      providers.some((provider: string) => socialProviders.includes(provider));
+    const providers = user.app_metadata?.providers ?? [];
+    const hasSocialLogin = providers.some((provider) =>
+      socialProviders.includes(provider)
+    );
 
     setIsSocialLogin(hasSocialLogin);
     setLoading(false);
   }, [session]);
 
-  const handleChangePassword = async (e: FormEvent<HTMLFormElement>) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -65,11 +65,14 @@ const ChangePassword = () => {
 
     try {
       if (!isSocialLogin) {
-        // Validação da senha atual via API
-        await api.post("/auth/validate-password", { email, password: currentPassword });
+        // Valida senha atual via API
+        await api.post("/auth/validate-password", {
+          email,
+          password: currentPassword,
+        });
       }
 
-      // Atualizar senha
+      // Atualiza senha
       await api.post("/auth/change-password", { email, newPassword });
 
       setSuccess(
@@ -82,17 +85,18 @@ const ChangePassword = () => {
       setNewPassword("");
       setConfirmPassword("");
 
-      // Desloga e redireciona
+      // Logout opcional e redirecionamento
       await api.post("/auth/logout");
       router.push("/signin");
     } catch (err: unknown) {
-      const error = err as ApiError;
-      setError(error.response?.data?.message || "Ocorreu um erro inesperado.");
+      const message =
+        (err as any)?.response?.data?.message || "Ocorreu um erro inesperado.";
+      setError(message);
       setIsSubmitting(false);
     }
   };
 
-  if (!session || loading) return <Loadingpage />;
+  if (!session) return <Loadingpage />;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -119,50 +123,54 @@ const ChangePassword = () => {
           {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
           {success && <p className="mb-4 text-sm text-green-500">{success}</p>}
 
-          <form onSubmit={handleChangePassword}>
-            {!isSocialLogin && (
+          {loading ? (
+            <p className="text-center text-gray-500">Loading...</p>
+          ) : (
+            <form onSubmit={handleChangePassword}>
+              {!isSocialLogin && (
+                <div className="mb-4">
+                  <Input
+                    name="currentPassword"
+                    label="Current Password"
+                    placeholder="Enter your current password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
+
               <div className="mb-4">
                 <Input
-                  name="currentPassword"
-                  label="Current Password"
-                  placeholder="Enter your current password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  name="newPassword"
+                  label="New Password"
+                  placeholder="Create a password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
                   required
                 />
               </div>
-            )}
 
-            <div className="mb-4">
-              <Input
-                name="newPassword"
-                label="New Password"
-                placeholder="Create a password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-              />
-            </div>
+              <div className="mb-4">
+                <Input
+                  name="confirmPassword"
+                  label="Confirm Password"
+                  placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
 
-            <div className="mb-4">
-              <Input
-                name="confirmPassword"
-                label="Confirm Password"
-                placeholder="Confirm your password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-300"
-              disabled={isSubmitting}
-            >
-              {isSocialLogin ? "Set Password" : "Change Password"}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-300"
+              >
+                {isSocialLogin ? "Set Password" : "Change Password"}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>
