@@ -26,19 +26,28 @@ export default function Cards() {
     const [error, setError] = useState<string | null>(null);
 
     const user = useMemo(() => {
-        if (!session?.user) return null;
-        return {
-            id: session.user.id,
-            name: session.user.user_metadata.name || "User",
-            picture: session.user.user_metadata?.avatar_url || null,
-            email: session?.user.email,
-            phone: session?.user.phone,
-            birthdate: session?.user.user_metadata?.birthdate,
-            nationality: session?.user.user_metadata?.nationality,
-            address: address,
-            currency: currency,
-        };
-    }, [session, address, currency]);
+  if (!session?.user) return null;
+
+  // Força tipagem do metadata
+  const metadata = session.user.user_metadata as {
+    name?: string;
+    avatar_url?: string;
+    birthdate?: string;
+    nationality?: string;
+  };
+
+  return {
+    id: session.user.id,
+    name: metadata.name || "User",
+    picture: metadata.avatar_url || null,
+    email: session.user.email,
+    phone: session.user.phone,
+    birthdate: metadata.birthdate,
+    nationality: metadata.nationality,
+    address: address,
+    currency: currency,
+  };
+}, [session, address, currency]);
 
 const handleRequestCard = async () => {
   try {
