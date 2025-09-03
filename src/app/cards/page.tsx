@@ -38,7 +38,7 @@ export default function Cards() {
             address: address,
             currency: currency,
         };
-    }, [session]);
+    }, [session, address, currency]);
 
 const handleRequestCard = async () => {
   try {
