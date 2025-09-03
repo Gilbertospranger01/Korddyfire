@@ -36,7 +36,7 @@ function Signin() {
 
       // Redireciona após login bem-sucedido
       router.push("/home");
-    } catch (err: any) {
+    } catch (err: unknown {
       setError(err?.response?.data?.error || "Erro ao fazer login.");
     }
   };
