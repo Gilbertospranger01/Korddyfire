@@ -34,8 +34,8 @@ function Graph() {
     "Saturday",
   ];
 
-  const fetchData = async () => {
-    try {
+  const fetchData = useCallback(async () => {
+try {
       // Chama endpoints REST que você deve ter criado no backend
       const [salesRes, purchasesRes] = await Promise.all([
         api.get("/sales"),
