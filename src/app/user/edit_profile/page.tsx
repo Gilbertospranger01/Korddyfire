@@ -91,7 +91,7 @@ const Edit_Profile = () => {
       await api.put(`/edit_profile`, formattedData);
       alert("Perfil atualizado com sucesso!");
       router.push('/user/profile');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Erro ao atualizar perfil:", err?.response?.data?.error || err.message);
     } finally {
       setLoading(false);
@@ -126,7 +126,7 @@ const Edit_Profile = () => {
       console.log(userData)
 
       alert("Imagem de perfil atualizada com sucesso!");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.log(userData)
       console.error("Erro ao fazer upload da imagem:", err?.response?.data?.error || err.message);
       alert("Erro ao enviar a imagem.");
@@ -160,7 +160,7 @@ const Edit_Profile = () => {
 
       setUserData((prev) => ({ ...prev, picture_url: '' }));
       alert("Imagem de perfil removida com sucesso!");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Erro ao remover imagem:", err?.response?.data?.error || err.message);
       alert("Erro ao remover a imagem.");
     } finally {
