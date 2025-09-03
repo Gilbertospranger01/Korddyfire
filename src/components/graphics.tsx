@@ -48,12 +48,12 @@ function Graph() {
       const salesMap = new Map<string, number>();
       const purchasesMap = new Map<string, number>();
 
-      salesData.forEach((sale: any) => {
+      salesData.forEach((sale: unknown) => {
         const key = `${sale.month}/${sale.year}`;
         salesMap.set(key, (salesMap.get(key) || 0) + sale.price);
       });
 
-      purchasesData.forEach((purchase: any) => {
+      purchasesData.forEach((purchase: unknown) => {
         const key = `${purchase.month}/${purchase.year}`;
         purchasesMap.set(key, (purchasesMap.get(key) || 0) + purchase.amount);
       });
