@@ -5,7 +5,7 @@ export type ApiErrorResponse = {
 };
 
 const api = axios.create({
-  baseURL: "http://localhost:4000/api/V1/",
+  baseURL: "https://korddyfirebase.onrender.com/api/V1/",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
