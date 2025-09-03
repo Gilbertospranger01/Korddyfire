@@ -47,7 +47,7 @@ const sendOtp = async () => {
     await api.post('/auth/send-email-change-otp', { newEmail });
     setOtpSent(true);
     setSuccess('Código OTP enviado para o novo e-mail.');
-  } catch (err: any) {
+  } catch (err: unknown) {
     setError(err.response?.data?.message || 'Erro ao enviar código OTP.');
   }
 };
@@ -67,7 +67,7 @@ const verifyOtp = async (e: React.FormEvent<HTMLFormElement>) => {
     setOtp('');
     await api.post('/auth/logout'); // se for o caso
     router.push('/signin');
-  } catch (err: any) {
+  } catch (err: unknown) {
     setError(err.response?.data?.message || 'Erro ao validar OTP.');
   }
 };
