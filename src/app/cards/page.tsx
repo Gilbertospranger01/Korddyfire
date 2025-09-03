@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 import Side_Seller_Dashboard from "@/components/sideSellerdashboard";
