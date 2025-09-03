@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 import Side_Seller_Dashboard from "@/components/sideSellerdashboard";
 import api from '@/utils/api';
+import { AxiosError } from "axios";
 import { FiArrowLeft } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import Loadingpage from "@/loadingpages/loadingpage";
@@ -72,16 +73,16 @@ const handleRequestCard = async () => {
     setCards([res.data.card]); // ou `res.data.cards` conforme backend
     setError(null);
     alert("Cartão solicitado com sucesso!");
-  } catch (err: unknown) {
-    console.error("❌ Erro ao solicitar cartão:", err);
+  } catch (err) {
+  console.error("❌ Erro ao solicitar cartão:", err);
 
-    const apiError = err.response?.data?.error;
-    const errorMessage =
-      apiError?.message || "Erro inesperado. Tente novamente mais tarde.";
+  const axiosError = err as AxiosError<{ error?: { message?: string } }>;
+  const apiError = axiosError.response?.data?.error;
+  const errorMessage =
+    apiError?.message || "Erro inesperado. Tente novamente mais tarde.";
 
-    setError(errorMessage);
-  }
-};
+  // aqui você pode exibir errorMessage no UI ou setar em um estado
+}
 
     const handleShowCvv = (index: number) => {
         setShowCvvIndex(index);
