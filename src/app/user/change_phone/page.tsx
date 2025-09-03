@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Loadingpage from "@/loadingpages/loadingpage";
 import { FiArrowLeft } from "react-icons/fi";
 import Sideprofile from "@/components/sideprofile";
-import PhoneInput from "react-phone-number-input";
+import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 
 const ChangePhone = () => {
@@ -29,17 +29,23 @@ const ChangePhone = () => {
 
   if (!session || loading) return <Loadingpage />;
 
-  const sendOtp = async () => {
+  const sendOtp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setError("");
     setSuccess("");
+
+    if (!currentPhone || !isValidPhoneNumber(currentPhone)) {
+      setError("Por favor, insira um número de telefone válido.");
+      return;
+    }
 
     try {
       await api.post("/user/phone/send-otp", { phone: currentPhone });
       setOtpSent(true);
       setSuccess("Código OTP enviado para o número de telefone.");
     } catch (e: unknown) {
-      if (axios.isAxiosError(e)) {
-        setError(e.response?.data?.message || "Erro ao enviar código OTP.");
+      if (api.isAxiosError(e)) {
+        setError(e.response?.data?.error || "Erro ao enviar código OTP.");
       } else {
         setError("Erro ao enviar código OTP.");
       }
@@ -51,6 +57,11 @@ const ChangePhone = () => {
     setError("");
     setSuccess("");
 
+    if (!otp) {
+      setError("Por favor, insira o código OTP.");
+      return;
+    }
+
     try {
       await api.post("/user/phone/verify-otp", { phone: currentPhone, otp });
       setSuccess("Número de telefone atualizado com sucesso! Faça login novamente.");
@@ -58,8 +69,8 @@ const ChangePhone = () => {
       await api.post("/auth/logout");
       router.push("/signin");
     } catch (e: unknown) {
-      if (axios.isAxiosError(e)) {
-        setError(e.response?.data?.message || "Erro ao verificar OTP.");
+      if (api.isAxiosError(e)) {
+        setError(e.response?.data?.error || "Erro ao verificar OTP.");
       } else {
         setError("Erro ao verificar OTP.");
       }
@@ -92,12 +103,12 @@ const ChangePhone = () => {
           {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
           {success && <p className="mb-4 text-sm text-green-500">{success}</p>}
 
-          <form onSubmit={otpSent ? verifyOtp : (e) => { e.preventDefault(); sendOtp(); }}>
+          <form onSubmit={otpSent ? verifyOtp : sendOtp}>
             <PhoneInput
               defaultCountry="AO"
               value={currentPhone}
               onChange={(val) => setCurrentPhone(val || "")}
-              className="mb-4"
+              className="mb-4 w-full"
             />
 
             {otpSent && (
