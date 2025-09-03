@@ -5,6 +5,14 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import api from "@/utils/api";
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
+
 export default function RecoverPassword() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("");
@@ -25,40 +33,49 @@ export default function RecoverPassword() {
       setStatus("Recovery email sent! Check your inbox.");
       setErrorStatus(false);
     } catch (err: unknown) {
-      // Manejo seguro de error
       let message = "An unexpected error occurred.";
-      if (err instanceof Error) message = err.message;
-      // Si tu api devuelve response con data.message, puedes hacer un type guard
-      if (
-        typeof err === "object" &&
-        err !== null &&
-        "response" in err &&
-        typeof (err as any).response?.data?.message === "string"
-      ) {
-        message = (err as any).response.data.message;
+
+      if (err instanceof Error) {
+        message = err.message;
       }
+
+      if (err && typeof err === "object" && "response" in err) {
+        const apiErr = err as ApiError;
+        if (apiErr.response?.data?.message) {
+          message = apiErr.response.data.message;
+        }
+      }
+
       setStatus(`Error: ${message}`);
       setErrorStatus(true);
     }
   };
 
   return (
-    <div className="flex w-full h-full">
+    <div className="flex w-full h-screen">
+      {/* Left side - Form */}
       <motion.div
         initial={{ x: "-100%", opacity: 0 }}
         animate={{ x: "0%", opacity: 1 }}
         transition={{ duration: 0.5 }}
         className="w-1/2 h-full flex flex-col justify-center items-center bg-gray-950 p-8 shadow-lg"
       >
-        <h2 className="text-2xl font-bold mb-4">Recover Password</h2>
+        <h2 className="text-2xl font-bold text-white mb-4">Recover Password</h2>
 
         {status && (
-          <p className={`text-sm mb-4 ${errorStatus ? "text-red-500" : "text-green-400"}`}>
+          <p
+            className={`text-sm mb-4 ${
+              errorStatus ? "text-red-500" : "text-green-400"
+            }`}
+          >
             {status}
           </p>
         )}
 
-        <form className="w-full max-w-md" onSubmit={(e) => e.preventDefault()}>
+        <form
+          className="w-full max-w-md"
+          onSubmit={(e) => e.preventDefault()}
+        >
           <label htmlFor="email" className="block text-white mb-2">
             Email
           </label>
@@ -84,6 +101,7 @@ export default function RecoverPassword() {
         </Link>
       </motion.div>
 
+      {/* Right side - Image */}
       <div
         className="w-1/2 h-full flex flex-col justify-center items-center text-white p-8 bg-cover bg-center"
         style={{
