@@ -8,7 +8,7 @@ import api from "@/utils/api";
 import { FaLock, FaUser } from "react-icons/fa";
 import Input from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Mail, User, UserCircleIcon } from "lucide-react";
+import { Mail, UserCircleIcon } from "lucide-react";
 
 function Signup() {
   const router = useRouter();
