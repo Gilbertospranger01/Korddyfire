@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import api from '@/utils/api';
+import api, { ApiErrorResponse } from "@/utils/api";
 import { FiArrowLeft } from "react-icons/fi";
 import Sideprofile from "@/components/sideprofile";
 import Loadingpage from "@/loadingpages/loadingpage";
@@ -16,66 +16,70 @@ const ChangeEmail = () => {
   const [success, setSuccess] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [otpSent, setOtpSent] = useState<boolean>(false);
+  const [session, setSession] = useState<boolean>(true); // simula sessão
 
+  // Busca email do usuário via API
   useEffect(() => {
     const fetchUserEmail = async () => {
       setLoading(true);
-      const { data, error } = await supabase.auth.getUser();
-      const user = data?.user;
-
-      if (error || !user) {
-        setError("Erro ao obter o e-mail do usuário.");
+      try {
+        const res = await api.get("/auth/me"); // endpoint para pegar usuário logado
+        setCurrentEmail(res.data.email);
+      } catch (err: unknown) {
+        const message =
+          (err as any).response?.data?.error ||
+          "Erro ao obter o e-mail do usuário.";
+        setError(message);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      setCurrentEmail(user.email || "");
-      setLoading(false);
     };
 
     fetchUserEmail();
   }, []);
 
-const sendOtp = async () => {
-  setError('');
-  setSuccess('');
-  if (!newEmail) {
-    setError('Digite o novo e-mail.');
-    return;
-  }
-  try {
-    await api.post('/auth/send-email-change-otp', { newEmail });
-    setOtpSent(true);
-    setSuccess('Código OTP enviado para o novo e-mail.');
-  } catch (err: unknown) {
-    setError(err.response?.data?.message || 'Erro ao enviar código OTP.');
-  }
-};
+  const sendOtp = async () => {
+    setError("");
+    setSuccess("");
+    if (!newEmail) {
+      setError("Digite o novo e-mail.");
+      return;
+    }
+    try {
+      await api.post("/auth/send-email-change-otp", { newEmail });
+      setOtpSent(true);
+      setSuccess("Código OTP enviado para o novo e-mail.");
+    } catch (err: unknown) {
+      const message =
+        (err as any).response?.data?.error || "Erro ao enviar código OTP.";
+      setError(message);
+    }
+  };
 
-const verifyOtp = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setError('');
-  setSuccess('');
-  if (!otp) {
-    setError('Digite o código OTP.');
-    return;
-  }
-  try {
-    await api.post('/auth/verify-email-change', { newEmail, otp });
-    setSuccess('E-mail atualizado com sucesso! Faça login novamente.');
-    setNewEmail('');
-    setOtp('');
-    await api.post('/auth/logout'); // se for o caso
-    router.push('/signin');
-  } catch (err: unknown) {
-    setError(err.response?.data?.message || 'Erro ao validar OTP.');
-  }
-};
+  const verifyOtp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    if (!otp) {
+      setError("Digite o código OTP.");
+      return;
+    }
+    try {
+      await api.post("/auth/verify-email-change", { newEmail, otp });
+      setSuccess("E-mail atualizado com sucesso! Faça login novamente.");
+      setNewEmail("");
+      setOtp("");
+      await api.post("/auth/logout");
+      router.push("/signin");
+    } catch (err: unknown) {
+      const message =
+        (err as any).response?.data?.error || "Erro ao validar OTP.";
+      setError(message);
+    }
+  };
 
   if (!session) {
-    return (
-      <Loadingpage />
-    );
+    return <Loadingpage />;
   }
 
   return (
