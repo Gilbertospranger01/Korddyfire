@@ -9,7 +9,6 @@ import { FiArrowLeft } from "react-icons/fi";
 import Sideprofile from "@/components/sideprofile";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import axios, { AxiosError } from "axios";
 
 const ChangePhone = () => {
   const router = useRouter();
