@@ -39,6 +39,7 @@ const Header = () => {
         const res = await api.get("/wallets");
         setBalance(res.data.balance || 0);
       } catch (err) {
+        console.log(products, balance);
         console.error("Erro ao buscar saldo", err);
       } finally {
         setLoading(false);
