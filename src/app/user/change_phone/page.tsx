@@ -9,6 +9,7 @@ import { FiArrowLeft } from "react-icons/fi";
 import Sideprofile from "@/components/sideprofile";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
+import { isAxiosError } from "axios";
 
 const ChangePhone = () => {
   const router = useRouter();
@@ -44,7 +45,7 @@ const ChangePhone = () => {
       setOtpSent(true);
       setSuccess("Código OTP enviado para o número de telefone.");
     } catch (e: unknown) {
-      if (api.isAxiosError(e)) {
+      if (isAxiosError(e)) {
         setError(e.response?.data?.error || "Erro ao enviar código OTP.");
       } else {
         setError("Erro ao enviar código OTP.");
@@ -69,7 +70,7 @@ const ChangePhone = () => {
       await api.post("/auth/logout");
       router.push("/signin");
     } catch (e: unknown) {
-      if (api.isAxiosError(e)) {
+      if (isAxiosError(e)) {
         setError(e.response?.data?.error || "Erro ao verificar OTP.");
       } else {
         setError("Erro ao verificar OTP.");
