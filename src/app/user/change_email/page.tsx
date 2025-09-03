@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import api, { ApiErrorResponse } from "@/utils/api";
+import api from "@/utils/api";
 import { FiArrowLeft } from "react-icons/fi";
 import Sideprofile from "@/components/sideprofile";
 import Loadingpage from "@/loadingpages/loadingpage";
@@ -16,19 +16,19 @@ const ChangeEmail = () => {
   const [success, setSuccess] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [otpSent, setOtpSent] = useState<boolean>(false);
-  const [session, setSession] = useState<boolean>(true); // simula sessão
+  const [session] = useState<boolean>(true); // simula sessão
 
   // Busca email do usuário via API
   useEffect(() => {
     const fetchUserEmail = async () => {
       setLoading(true);
       try {
-        const res = await api.get("/auth/me"); // endpoint para pegar usuário logado
+        const res = await api.get<{ email: string }>("/auth/me"); // tipagem explícita
         setCurrentEmail(res.data.email);
       } catch (err: unknown) {
         const message =
-          (err as any).response?.data?.error ||
-          "Erro ao obter o e-mail do usuário.";
+          (err as { response?: { data?: { error?: string } } })?.response?.data
+            ?.error || "Erro ao obter o e-mail do usuário.";
         setError(message);
       } finally {
         setLoading(false);
@@ -51,7 +51,8 @@ const ChangeEmail = () => {
       setSuccess("Código OTP enviado para o novo e-mail.");
     } catch (err: unknown) {
       const message =
-        (err as any).response?.data?.error || "Erro ao enviar código OTP.";
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error || "Erro ao enviar código OTP.";
       setError(message);
     }
   };
@@ -73,7 +74,8 @@ const ChangeEmail = () => {
       router.push("/signin");
     } catch (err: unknown) {
       const message =
-        (err as any).response?.data?.error || "Erro ao validar OTP.";
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error || "Erro ao validar OTP.";
       setError(message);
     }
   };
@@ -134,14 +136,12 @@ const ChangeEmail = () => {
                   placeholder="Digite o novo e-mail"
                   required
                   value={newEmail}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setNewEmail(e.target.value)
-                  }
+                  onChange={(e) => setNewEmail(e.target.value)}
                   className="shadow appearance-none border rounded w-full py-3 px-4 text-white bg-gray-800 leading-tight focus:outline-none focus:shadow-outline"
                 />
               </div>
 
-              {otpSent ? (
+              {otpSent && (
                 <div className="mb-4">
                   <label htmlFor="otp" className="block mb-1 text-sm">
                     Código OTP
@@ -153,22 +153,20 @@ const ChangeEmail = () => {
                     placeholder="Digite o código OTP"
                     required
                     value={otp}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setOtp(e.target.value)
-                    }
+                    onChange={(e) => setOtp(e.target.value)}
                     className="shadow appearance-none border rounded w-full py-3 px-4 text-white bg-gray-800 leading-tight focus:outline-none focus:shadow-outline"
                   />
                 </div>
-              ) : (
+              )}
+
+              {!otpSent ? (
                 <button
                   type="submit"
                   className="w-full px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-300"
                 >
                   Enviar Código OTP
                 </button>
-              )}
-
-              {otpSent && (
+              ) : (
                 <button
                   type="submit"
                   className="w-full px-4 py-2 mt-4 text-white bg-blue-500 rounded hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-300"
