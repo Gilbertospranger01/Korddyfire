@@ -7,8 +7,9 @@ import { useAuth } from "@/hooks/useAuth";
 import Loadingpage from "@/loadingpages/loadingpage";
 import { FiArrowLeft } from "react-icons/fi";
 import Sideprofile from "@/components/sideprofile";
-import PhoneInput from "react-phone-number-input"; // Ajusta para o teu import real
+import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
+import axios, { AxiosError } from "axios";
 
 const ChangePhone = () => {
   const router = useRouter();
@@ -27,9 +28,7 @@ const ChangePhone = () => {
     setLoading(false);
   }, [session]);
 
-  if (!session || loading) {
-    return <Loadingpage />;
-  }
+  if (!session || loading) return <Loadingpage />;
 
   const sendOtp = async () => {
     setError("");
@@ -40,7 +39,11 @@ const ChangePhone = () => {
       setOtpSent(true);
       setSuccess("Código OTP enviado para o número de telefone.");
     } catch (e: unknown) {
-      setError(e.response?.data?.message || "Erro ao enviar código OTP.");
+      if (axios.isAxiosError(e)) {
+        setError(e.response?.data?.message || "Erro ao enviar código OTP.");
+      } else {
+        setError("Erro ao enviar código OTP.");
+      }
     }
   };
 
@@ -56,7 +59,11 @@ const ChangePhone = () => {
       await api.post("/auth/logout");
       router.push("/signin");
     } catch (e: unknown) {
-      setError(e.response?.data?.message || "Erro ao verificar OTP.");
+      if (axios.isAxiosError(e)) {
+        setError(e.response?.data?.message || "Erro ao verificar OTP.");
+      } else {
+        setError("Erro ao verificar OTP.");
+      }
     }
   };
 
@@ -88,7 +95,7 @@ const ChangePhone = () => {
 
           <form onSubmit={otpSent ? verifyOtp : (e) => { e.preventDefault(); sendOtp(); }}>
             <PhoneInput
-              defaultCountry="AO" // ajusta pro país padrão
+              defaultCountry="AO"
               value={currentPhone}
               onChange={(val) => setCurrentPhone(val || "")}
               className="mb-4"
