@@ -1,13 +1,6 @@
-import Loadingpage from "../../loadingpages/loadingpage";
 import React from "react";
 
 function Shopping() {
-
-  if (!session) {
-    return (
-      <Loadingpage />
-    );
-  }
 
   return (
     <div>
