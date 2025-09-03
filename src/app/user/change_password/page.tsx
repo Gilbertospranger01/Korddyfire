@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/utils/api";
 import Input from "@/components/ui/input";
@@ -9,20 +9,17 @@ import Sideprofile from "@/components/sideprofile";
 import Loadingpage from "@/loadingpages/loadingpage";
 import { useAuth } from "@/hooks/useAuth";
 
-interface SessionUser {
-  email: string;
-  app_metadata?: {
-    providers?: string[];
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
   };
-}
-
-interface Session {
-  user?: SessionUser;
 }
 
 const ChangePassword = () => {
   const router = useRouter();
-  const { session } = useAuth<Session>();
+  const { session } = useAuth();
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -32,8 +29,7 @@ const ChangePassword = () => {
   const [isSocialLogin, setIsSocialLogin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const email = session?.user?.email || "";
+  const [email, setEmail] = useState("");
 
   useEffect(() => {
     if (!session?.user) {
@@ -42,23 +38,26 @@ const ChangePassword = () => {
       return;
     }
 
+    setEmail(session.user.email || "");
+
     // Verifica se o usuário está logado com provedor social
     const socialProviders = ["google", "facebook", "github"];
-    const hasSocialLogin = Array.isArray(session.user.app_metadata?.providers)
-      ? session.user.app_metadata.providers.some((p) => socialProviders.includes(p))
-      : false;
+    const providers = session.user.app_metadata?.providers;
+    const hasSocialLogin =
+      Array.isArray(providers) &&
+      providers.some((provider: string) => socialProviders.includes(provider));
 
     setIsSocialLogin(hasSocialLogin);
     setLoading(false);
   }, [session]);
 
-  const handleChangePassword = async (e: React.FormEvent) => {
+  const handleChangePassword = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setSuccess("");
     setIsSubmitting(true);
 
-    if (!isSocialLogin && newPassword !== confirmPassword) {
+    if (newPassword !== confirmPassword) {
       setError("A nova senha e a confirmação não correspondem.");
       setIsSubmitting(false);
       return;
@@ -66,9 +65,11 @@ const ChangePassword = () => {
 
     try {
       if (!isSocialLogin) {
+        // Validação da senha atual via API
         await api.post("/auth/validate-password", { email, password: currentPassword });
       }
 
+      // Atualizar senha
       await api.post("/auth/change-password", { email, newPassword });
 
       setSuccess(
@@ -81,10 +82,12 @@ const ChangePassword = () => {
       setNewPassword("");
       setConfirmPassword("");
 
+      // Desloga e redireciona
       await api.post("/auth/logout");
       router.push("/signin");
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "Ocorreu um erro inesperado.");
+    } catch (err: unknown) {
+      const error = err as ApiError;
+      setError(error.response?.data?.message || "Ocorreu um erro inesperado.");
       setIsSubmitting(false);
     }
   };
@@ -148,7 +151,7 @@ const ChangePassword = () => {
                 placeholder="Confirm your password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                required={!isSocialLogin}
+                required
               />
             </div>
 
