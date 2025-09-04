@@ -8,11 +8,12 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaGithub, FaLock } from "react-icons/fa";
-
 import BackgroundImage from "@/components/backgroundimage";
 import Loadingconnection from "@/loadingpages/loadingconnection";
 import api from "@/utils/api";
 import Input from "@/components/ui/input";
+import Image from "next/image";
+
 
 export default function Signin() {
   const router = useRouter();
@@ -39,8 +40,13 @@ export default function Signin() {
     }
   };
 
-  const handleOAuthLogin = async (provider: "google" | "facebook" | "github") => {
+  const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "imlinkedy") => {
     try {
+      if (provider === "imlinkedy") {
+        // Redireciona para o endpoint OAuth do Imlinkedy
+        window.location.href = "https://imlinked.vercel.app/oauth/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=https://yourapp.com/home&response_type=code";
+        return;
+      }
       await signIn(provider, { callbackUrl: "/home" });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro desconhecido ao fazer login.");
@@ -62,12 +68,10 @@ export default function Signin() {
 
   return (
     <div className="flex w-full h-screen bg-gray-100">
-      {/* Background só aparece em desktop */}
       <div className="hidden md:flex md:w-1/2 h-full">
         <BackgroundImage />
       </div>
 
-      {/* Form Section - ocupa toda largura em mobile */}
       <div className="w-full md:w-1/2 flex items-center justify-center bg-gray-950 p-6">
         <motion.div
           initial={{ x: "-100%", opacity: 0 }}
@@ -87,7 +91,6 @@ export default function Signin() {
               className="w-full mb-3"
               required
             />
-
             <Input
               type="password"
               name="password"
@@ -137,6 +140,14 @@ export default function Signin() {
               </button>
               <button onClick={() => handleOAuthLogin("github")} className="text-white" aria-label="Entrar com GitHub">
                 <FaGithub size={30} />
+              </button>
+              {/* Botão Imlinkedy */}
+              <button
+                onClick={() => handleOAuthLogin("imlinkedy")}
+                className="bg-gray-800 hover:bg-gray-700 p-2 rounded flex items-center justify-center"
+                aria-label="Entrar com Imlinkedy"
+              >
+                <Image src="https://imlinked.vercel.app/fav icon.png" alt="Imlinkedy" width={28} height={28} />
               </button>
             </div>
           </div>
