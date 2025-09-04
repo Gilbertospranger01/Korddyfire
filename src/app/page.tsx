@@ -9,7 +9,7 @@ import api from "@/utils/api";
 import Loadingconnection from "@/loadingpages/loadingconnection";
 import Loadingpage from "@/loadingpages/loadingpage";
 
-const Home = () => {
+export default function Home() {
   const { session } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -21,95 +21,97 @@ const Home = () => {
   >([]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 5000);
+    const timer = setTimeout(() => setLoading(false), 2000);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
     if (session === null) return;
-    const currentPath = window.location.pathname;
-    if (session && currentPath !== "/home") {
-      router.push("/home");
-    } else if (!session && currentPath !== "/") {
-      router.push("/");
-    }
-  }, [session, router, pathname]);
+    if (session && pathname !== "/home") router.push("/home");
+    else if (!session && pathname !== "/") router.push("/");
+  }, [session, pathname, router]);
 
-  const formatPrice = (price: number) => {
-    return price.toLocaleString("en");
-  };
-
-  // Agora usando api REST
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await api.get("/products"); // espera que seu backend retorne lista
-        setProducts(response.data);
-      } catch (error) {
-        console.error("Erro ao buscar produtos:", error);
+        const { data } = await api.get("/products");
+        setProducts(data);
+      } catch (err) {
+        console.error("Erro ao buscar produtos:", err);
       }
     };
     fetchProducts();
   }, []);
 
   useEffect(() => {
-    const updateOnlineStatus = () => {
-      setIsOnline(navigator.onLine);
-    };
-
+    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
     updateOnlineStatus();
-
     window.addEventListener("online", updateOnlineStatus);
     window.addEventListener("offline", updateOnlineStatus);
-
     return () => {
       window.removeEventListener("online", updateOnlineStatus);
       window.removeEventListener("offline", updateOnlineStatus);
     };
   }, []);
 
+  const formatPrice = (price: number) => price.toLocaleString("en");
+
   if (!isOnline) return <Loadingconnection />;
   if (loading) return <Loadingpage />;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center">
-      <header className="w-full bg-gray-900 fixed top-0 left-0 border-b z-50 border-gray-700 py-4 flex justify-between items-center px-6">
-        <h1 className="text-2xl font-bold text-white">Korddyfire</h1>
-        <div className="space-x-4">
-          <Link href="/signin">
-            <button className="bg-gray-700 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition cursor-pointer w-30">Sign In</button>
-          </Link>
-          <Link href="/signup">
-            <button className="bg-gray-700 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition cursor-pointer w-30">Sign Up</button>
-          </Link>
+    <div className="flex flex-col min-h-screen bg-gray-900 text-white">
+      {/* Header */}
+      <header className="w-full fixed top-0 left-0 z-50 bg-gray-900 border-b border-gray-700">
+        <div className="max-w-7xl mx-auto flex justify-between items-center px-4 py-4">
+          <h1 className="text-2xl font-bold">Korddyfire</h1>
+          <nav className="flex gap-2">
+            <Link
+              href="/signin"
+              className="inline-flex items-center justify-center rounded-md bg-gray-700 px-4 py-2 text-white hover:bg-gray-600 transition focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/signup"
+              className="inline-flex items-center justify-center rounded-md bg-gray-700 px-4 py-2 text-white hover:bg-gray-600 transition focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
+              Sign Up
+            </Link>
+          </nav>
         </div>
       </header>
 
+      {/* Offline Banner */}
       {!isOnline && (
-        <div className="w-full bg-red-600 text-white text-center py-2 fixed top-[64px] z-40">
+        <div className="fixed top-[64px] w-full bg-red-600 text-white text-center py-2 z-40">
           Sem conexão com a internet. Tentando reconectar...
         </div>
       )}
 
-      <main className="container mx-auto px-4 py-8 mt-16 mb-10 max-w-full w-full transition-all">
+      {/* Main Content */}
+      <main className="flex-1 container mx-auto px-4 pt-24 pb-16">
         <section>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {products.map((product) => (
-              <div key={product.id} className="relative w-full h-[400px] bg-gray-800 shadow-md overflow-hidden">
-                <Image
-                  src={product.image || "/placeholder.jpg"}
-                  alt={product.name}
-                  fill
-                  priority
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 flex flex-col justify-end bg-opacity-50 p-4 text-white">
-                  <p className="text-green-600 font-bold text-2xl">${formatPrice(product.price)},00</p>
-                  <h4 className="font-bold text-5xl text-white">{product.name}</h4>
+              <div
+                key={product.id}
+                className="relative flex flex-col justify-end bg-gray-800 rounded-2xl shadow-md overflow-hidden group"
+              >
+                <div className="relative w-full h-64">
+                  <Image
+                    src={product.image || "/placeholder.jpg"}
+                    alt={product.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <div className="p-4 space-y-2 bg-gray-900/70 backdrop-blur-sm">
+                  <p className="text-green-600 font-bold text-xl">${formatPrice(product.price)},00</p>
+                  <h4 className="font-semibold text-lg truncate">{product.name}</h4>
                   <button
-                    className="mt-2 bg-green-600 text-white px-4 py-2 cursor-pointer rounded-md shadow-md w-full hover:bg-green-700 transition duration-300"
+                    type="button"
+                    className="mt-2 inline-flex items-center justify-center w-full rounded-md bg-green-600 px-4 py-2 text-white shadow-md hover:bg-green-700 transition focus:outline-none focus:ring-2 focus:ring-green-400"
                     onClick={() => router.push(`/product/${product.id}`)}
                   >
                     Buy Now
@@ -121,13 +123,12 @@ const Home = () => {
         </section>
       </main>
 
-      <footer className="fixed left-0 bottom-0 w-full py-3 bg-gray-950">
-        <div className="container mx-auto text-center">
-          <p className="text-gray-900 dark:text-white">&copy; 2025 Korddyfire. from Korddy All rights reserved.</p>
+      {/* Footer */}
+      <footer className="bg-gray-950 py-4 w-full">
+        <div className="text-center text-gray-400 text-sm">
+          &copy; 2025 Korddyfire. All rights reserved.
         </div>
       </footer>
     </div>
   );
-};
-
-export default Home;
+}
