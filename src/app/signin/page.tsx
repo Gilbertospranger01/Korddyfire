@@ -43,7 +43,6 @@ export default function Signin() {
   const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "imlinkedy") => {
     try {
       if (provider === "imlinkedy") {
-        // Redireciona para o endpoint OAuth do Imlinkedy
         window.location.href = "https://imlinked.vercel.app/oauth/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=https://yourapp.com/home&response_type=code";
         return;
       }
@@ -144,10 +143,16 @@ export default function Signin() {
               {/* Botão Imlinkedy */}
               <button
                 onClick={() => handleOAuthLogin("imlinkedy")}
-                className="bg-gray-800 hover:bg-gray-700 p-2 rounded flex items-center justify-center"
+                className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-gray-800 hover:bg-gray-700"
                 aria-label="Entrar com Imlinkedy"
               >
-                <Image src="https://imlinked.vercel.app/fav icon.png" alt="Imlinkedy" width={28} height={28} />
+                <Image
+                  src="https://imlinked.vercel.app/favicon.png"
+                  alt="Imlinkedy"
+                  width={28}
+                  height={28}
+                  className="object-cover"
+                />
               </button>
             </div>
           </div>
