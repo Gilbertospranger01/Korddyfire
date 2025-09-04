@@ -65,19 +65,27 @@ export default function Signin() {
   if (!isOnline) return <Loadingconnection />;
 
   return (
-    <div className="flex w-full h-screen bg-gray-100 overflow-hidden">
-      {/* Formulário */}
-      <div className="w-1/2 h-full relative flex">
+    <div className="flex flex-col md:flex-row w-full h-screen bg-gray-100 overflow-auto">
+      
+      {/* Form Section */}
+      <div className="w-full md:w-1/2 flex items-center justify-center bg-gray-950 p-6">
         <motion.div
           initial={{ x: "-100%", opacity: 0 }}
           animate={{ x: "0%", opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="absolute left-0 w-full h-full flex flex-col justify-center items-center bg-gray-950 p-8 shadow-lg"
+          className="w-full max-w-md flex flex-col justify-center items-center bg-gray-950 p-6 md:p-8 rounded-lg shadow-lg"
         >
-          <h2 className="text-2xl font-bold mb-6 text-center text-white">Sign In</h2>
-          <form className="w-full max-w-md" onSubmit={handleSignIn}>
+          <h2 className="text-2xl font-bold mb-6 text-center text-white">
+            Sign In
+          </h2>
+
+          <form className="w-full" onSubmit={handleSignIn}>
+            {/* Email */}
             <div className="mb-4">
-              <label htmlFor="email" className="block text-white text-sm font-bold mb-2">
+              <label
+                htmlFor="email"
+                className="block text-white text-sm font-bold mb-2"
+              >
                 Email
               </label>
               <input
@@ -92,6 +100,7 @@ export default function Signin() {
               />
             </div>
 
+            {/* Password */}
             <Input
               name="password"
               icon={<FaLock />}
@@ -103,10 +112,14 @@ export default function Signin() {
               required
             />
 
+            {/* Forgot password & submit */}
             <div className="flex flex-col space-y-4 mt-4">
               <p className="text-white text-xs text-right">
-                Esqueceu a senha?
-                <Link href="/user/recover_password" className="text-blue-400 hover:text-blue-600 ml-2">
+                Esqueceu a senha?{" "}
+                <Link
+                  href="/user/recover_password"
+                  className="text-blue-400 hover:text-blue-600 ml-2"
+                >
                   Recuperar
                 </Link>
               </p>
@@ -119,25 +132,43 @@ export default function Signin() {
             </div>
           </form>
 
+          {/* Error */}
           {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
-          <p className="text-center text-gray-400 text-sm mt-4">
+          {/* Signup link */}
+          <p className="text-center text-gray-400 text-sm mt-6">
             Não tem uma conta?{" "}
-            <Link href="/signup" className="text-blue-400 hover:text-blue-600">
+            <Link
+              href="/signup"
+              className="text-blue-400 hover:text-blue-600"
+            >
               Criar conta
             </Link>
           </p>
 
+          {/* OAuth */}
           <div className="flex flex-col items-center mt-4 mb-10">
             <p className="text-gray-600 text-sm mb-2">Ou entre com</p>
             <div className="flex space-x-6">
-              <button onClick={() => handleOAuthLogin("google")} className="text-white" aria-label="Entrar com Google">
+              <button
+                onClick={() => handleOAuthLogin("google")}
+                className="text-white"
+                aria-label="Entrar com Google"
+              >
                 <FcGoogle size={30} />
               </button>
-              <button onClick={() => handleOAuthLogin("facebook")} className="text-blue-600" aria-label="Entrar com Facebook">
+              <button
+                onClick={() => handleOAuthLogin("facebook")}
+                className="text-blue-600"
+                aria-label="Entrar com Facebook"
+              >
                 <FaFacebook size={30} />
               </button>
-              <button onClick={() => handleOAuthLogin("github")} className="text-white" aria-label="Entrar com GitHub">
+              <button
+                onClick={() => handleOAuthLogin("github")}
+                className="text-white"
+                aria-label="Entrar com GitHub"
+              >
                 <FaGithub size={30} />
               </button>
             </div>
@@ -145,8 +176,8 @@ export default function Signin() {
         </motion.div>
       </div>
 
-      {/* Background */}
-      <div className="w-1/2 h-full flex justify-center items-center text-white bg-cover bg-center overflow-hidden">
+      {/* Background Section */}
+      <div className="w-full md:w-1/2 h-64 md:h-full flex justify-center items-center bg-cover bg-center overflow-hidden">
         <BackgroundImage />
       </div>
     </div>
