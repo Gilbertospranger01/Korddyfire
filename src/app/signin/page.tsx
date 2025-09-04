@@ -11,33 +11,58 @@ import BackgroundImage from "@/components/backgroundimage";
 import Loadingconnection from "@/loadingpages/loadingconnection";
 import Input from "@/components/ui/input";
 import Image from "next/image";
+import api from "@/utils/api";
 
 export default function Signin() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isOnline, setIsOnline] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  // Login via email/username + password
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    // Se quiser login email/senha via API
+    setLoading(true);
     try {
-      // await api.post("/signin", formData);
+      const response = await api.post("/signin", formData);
+      // Aqui você pode salvar token ou dados do usuário
       router.push("/home");
     } catch (err: unknown) {
       setError("Erro ao fazer login.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleOAuthLogin = (provider: "google" | "facebook" | "github" | "imlinkedy") => {
-    signIn(provider, { callbackUrl: "/home" }).catch(err =>
-      setError(err instanceof Error ? err.message : "Erro desconhecido")
-    );
+  // Login via provedores OAuth
+  const handleOAuthLogin = async (
+    provider: "google" | "facebook" | "github" | "imlinkedy"
+  ) => {
+    setError(null);
+    setLoading(true);
+    try {
+      const result = await signIn(provider, { redirect: false });
+      if (!result?.ok) throw new Error("Falha no login via provedor");
+
+      // Pegando os dados retornados do provider
+      const providerData = result?.user; // user geralmente vem do NextAuth
+      if (!providerData) throw new Error("Dados do provedor não encontrados");
+
+      // Enviar ao backend para criar/validar usuário
+      await api.post("/signin-providers", providerData);
+
+      router.push("/home");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -66,7 +91,9 @@ export default function Signin() {
           transition={{ duration: 0.5 }}
           className="w-full max-w-md flex flex-col justify-center items-center bg-gray-950 p-6 md:p-8 rounded-lg shadow-lg"
         >
-          <h2 className="text-2xl font-bold mb-6 text-center text-white">Sign In</h2>
+          <h2 className="text-2xl font-bold mb-6 text-center text-white">
+            Sign In
+          </h2>
 
           <form className="w-full" onSubmit={handleSignIn}>
             <Input
@@ -93,16 +120,20 @@ export default function Signin() {
             <div className="flex flex-col space-y-4 mt-4">
               <p className="text-white text-xs text-right">
                 Esqueceu a senha?{" "}
-                <Link href="/user/recover_password" className="text-blue-400 hover:text-blue-600 ml-2">
+                <Link
+                  href="/user/recover_password"
+                  className="text-blue-400 hover:text-blue-600 ml-2"
+                >
                   Recuperar
                 </Link>
               </p>
 
               <button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 w-full rounded focus:outline-none focus:ring-2 transition-all"
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 w-full rounded focus:outline-none focus:ring-2 transition-all disabled:opacity-50"
               >
-                Entrar
+                {loading ? "Carregando..." : "Entrar"}
               </button>
             </div>
           </form>
@@ -119,13 +150,25 @@ export default function Signin() {
           <div className="flex flex-col items-center mt-4 mb-10">
             <p className="text-gray-600 text-sm mb-2">Ou entre com</p>
             <div className="flex space-x-6">
-              <button onClick={() => handleOAuthLogin("google")} className="text-white" aria-label="Entrar com Google">
+              <button
+                onClick={() => handleOAuthLogin("google")}
+                className="text-white"
+                aria-label="Entrar com Google"
+              >
                 <FcGoogle size={30} />
               </button>
-              <button onClick={() => handleOAuthLogin("facebook")} className="text-blue-600" aria-label="Entrar com Facebook">
+              <button
+                onClick={() => handleOAuthLogin("facebook")}
+                className="text-blue-600"
+                aria-label="Entrar com Facebook"
+              >
                 <FaFacebook size={30} />
               </button>
-              <button onClick={() => handleOAuthLogin("github")} className="text-white" aria-label="Entrar com GitHub">
+              <button
+                onClick={() => handleOAuthLogin("github")}
+                className="text-white"
+                aria-label="Entrar com GitHub"
+              >
                 <FaGithub size={30} />
               </button>
               <button
