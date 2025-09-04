@@ -61,13 +61,13 @@ export default function Signin() {
   if (!isOnline) return <Loadingconnection />;
 
   return (
-    <div className="flex flex-col md:flex-row w-full h-screen bg-gray-100 overflow-auto">
+    <div className="flex w-full h-screen bg-gray-100">
       {/* Background só aparece em desktop */}
       <div className="hidden md:flex md:w-1/2 h-full">
         <BackgroundImage />
       </div>
 
-      {/* Form Section */}
+      {/* Form Section - ocupa toda largura em mobile */}
       <div className="w-full md:w-1/2 flex items-center justify-center bg-gray-950 p-6">
         <motion.div
           initial={{ x: "-100%", opacity: 0 }}
@@ -110,7 +110,7 @@ export default function Signin() {
 
               <button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 w-full rounded focus:outline-none focus:shadow-outline"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 w-full rounded focus:outline-none focus:ring-2 transition-all"
               >
                 Entrar
               </button>
