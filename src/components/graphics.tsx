@@ -33,20 +33,12 @@ type Purchase = {
 
 const socket = io("http://localhost:3500");
 
-const daysOfWeek = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
+const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-function Graph() {
+const Graph = () => {
   const [data, setData] = useState<CombinedData[]>([]);
 
-  const generateDailyData = (): CombinedData[] => {
+  const generateDailyData = useCallback((): CombinedData[] => {
     const today = new Date();
     const weekday = today.getDay();
 
@@ -55,7 +47,7 @@ function Graph() {
       sales: 0,
       purchases: 0,
     }));
-  };
+  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -94,9 +86,7 @@ function Graph() {
 
       const combinedData = lastSixMonths.map((key) => {
         const [month, year] = key.split("/").map(Number);
-        const monthName = new Date(year, month - 1).toLocaleString("default", {
-          month: "short",
-        });
+        const monthName = new Date(year, month - 1).toLocaleString("default", { month: "short" });
         return {
           name: `${monthName}/${year}`,
           sales: salesMap.get(key) || 0,
@@ -109,7 +99,7 @@ function Graph() {
       console.error("Erro ao buscar dados:", error);
       setData(generateDailyData());
     }
-  }, []);
+  }, [generateDailyData]);
 
   useEffect(() => {
     fetchData();
@@ -131,7 +121,7 @@ function Graph() {
   return (
     <div className="w-full h-100 pr-10 pb-16 pt-20 rounded-xl shadow-xl bg-gray-950 text-white">
       <ResponsiveContainer width="100%" height="100%">
-        {data.length > 0 ? (
+        {data.length ? (
           <AreaChart data={data}>
             <defs>
               <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
@@ -163,6 +153,6 @@ function Graph() {
       </ResponsiveContainer>
     </div>
   );
-}
+};
 
 export default Graph;
