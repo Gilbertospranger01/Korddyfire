@@ -142,18 +142,17 @@ export default function Signin() {
               </button>
               {/* Botão Imlinkedy */}
               <button
-                onClick={() => handleOAuthLogin("imlinkedy")}
-                className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-gray-800 hover:bg-gray-700"
-                aria-label="Entrar com Imlinkedy"
-              >
-                <Image
-  src="https://imlinked.vercel.app/favicon.png"
-  alt="Imlinkedy"
-  width={20}
-  height={20}
-  className="rounded-full object-cover"
-/>
-              </button>
+  onClick={() => handleOAuthLogin("imlinkedy")}
+  className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-gray-800 hover:bg-gray-700"
+  aria-label="Entrar com Imlinkedy"
+>
+  <Image
+    src="https://imlinked.vercel.app/favicon.png"
+    alt="Imlinkedy"
+    fill
+    className="object-cover"
+  />
+</button>
             </div>
           </div>
         </motion.div>
