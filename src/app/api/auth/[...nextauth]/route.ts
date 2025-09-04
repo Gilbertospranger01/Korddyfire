@@ -12,7 +12,7 @@ const handler = NextAuth({
       id: "imlinkedy",
       name: "Imlinkedy",
       type: "oauth",
-      version: "2.0",
+      version: "1.0",
       clientId: process.env.IMLINKEDY_CLIENT_ID!,
       clientSecret: process.env.IMLINKEDY_CLIENT_SECRET!,
       authorization: {
