@@ -8,6 +8,13 @@ type CheckoutProps = {
   sellerId: string;
 };
 
+// Helper para extrair mensagens de erro de um unknown
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  return 'Erro desconhecido';
+};
+
 export default function CheckoutForm({ amount, buyerId, sellerId }: CheckoutProps) {
   const stripe = useStripe();
   const elements = useElements();
@@ -22,51 +29,35 @@ export default function CheckoutForm({ amount, buyerId, sellerId }: CheckoutProp
     try {
       if (!stripe || !elements) {
         setMessage('Stripe ainda não carregou.');
-        setLoading(false);
         return;
       }
 
       const cardElement = elements.getElement(CardElement);
       if (!cardElement) {
         setMessage('Cartão inválido.');
-        setLoading(false);
         return;
       }
-
-      // 🔹 Envia os dados para o backend
-      const res = await fetch('/api/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount,
-          buyer_id: buyerId,
-          seller_id: sellerId,
-        }),
-      });
 
       if (!amount || !buyerId || !sellerId) {
         setMessage('Dados incompletos. Verifique sellerId e buyerId.');
-        setLoading(false);
         return;
       }
+
+      const res = await fetch('/api/create-payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, buyer_id: buyerId, seller_id: sellerId }),
+      });
 
       const { clientSecret, error } = await res.json();
 
-      // Adicione logs para depuração
-      console.log('Seller ID recebido:', sellerId);
-      console.log('Resultado da consulta no Supabase:', clientSecret, error);
-
       if (error || !clientSecret) {
         setMessage('Erro ao obter clientSecret.');
-        setLoading(false);
         return;
       }
 
-      // 🔹 Confirma o pagamento
       const result = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
-        },
+        payment_method: { card: cardElement },
       });
 
       if (result.error) {
@@ -78,15 +69,18 @@ export default function CheckoutForm({ amount, buyerId, sellerId }: CheckoutProp
       }
     } catch (err: unknown) {
       console.error(err);
-      setMessage('Erro: ' + err.message);
+      setMessage('Erro: ' + getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md mx-auto p-4 bg-white shadow-md rounded">
-      <CardElement className="p-2 border border-gray-300 w-100" />
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-md mx-auto p-4 bg-white shadow-md rounded"
+    >
+      <CardElement className="p-2 border border-gray-300 w-full" />
       <button
         type="submit"
         disabled={!stripe || loading}
@@ -94,7 +88,15 @@ export default function CheckoutForm({ amount, buyerId, sellerId }: CheckoutProp
       >
         {loading ? 'Processando...' : 'Pagar'}
       </button>
-      {message && <p className="mt-2 text-center text-sm text-green-600">{message}</p>}
+      {message && (
+        <p
+          className={`mt-2 text-center text-sm ${
+            message.startsWith('✅') ? 'text-green-600' : 'text-red-600'
+          }`}
+        >
+          {message}
+        </p>
+      )}
     </form>
   );
 }
