@@ -14,7 +14,6 @@ import api from "@/utils/api";
 import Input from "@/components/ui/input";
 import Image from "next/image";
 
-
 export default function Signin() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -41,28 +40,12 @@ export default function Signin() {
   };
 
   const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "imlinkedy") => {
-  try {
-    if (provider === "imlinkedy") {
-      const client_id = "SEU_CLIENT_ID";        // do LinkedApp
-      const client_secret = "SEU_CLIENT_SECRET"; // do LinkedApp
-
-      // Você pode abrir um modal ou prompt para o email do usuário
-      const email = prompt("Digite seu email cadastrado no Imlinkedy:");
-      if (!email) return;
-
-      const res = await api.post("/imlinkedy-login", { client_id, client_secret, email });
-      const token = res.data.access;
-
-      localStorage.setItem("token", token);
-      router.push("/home");
-      return;
+    try {
+      await signIn(provider, { callbackUrl: "/home" });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro desconhecido ao fazer login.");
     }
-
-    await signIn(provider, { callbackUrl: "/home" });
-  } catch (err: unknown) {
-    setError(err instanceof Error ? err.message : "Erro desconhecido ao fazer login.");
-  }
-};
+  };
 
   useEffect(() => {
     const updateOnlineStatus = () => setIsOnline(navigator.onLine);
@@ -152,19 +135,18 @@ export default function Signin() {
               <button onClick={() => handleOAuthLogin("github")} className="text-white" aria-label="Entrar com GitHub">
                 <FaGithub size={30} />
               </button>
-              {/* Botão Imlinkedy */}
               <button
-  onClick={() => handleOAuthLogin("imlinkedy")}
-  className="relative w-7 h-7 rounded-full overflow-hidden flex items-center justify-center bg-gray-800 hover:bg-gray-700"
-  aria-label="Entrar com Imlinkedy"
->
-  <Image
-    src="https://imlinked.vercel.app/favicon.png"
-    alt="Imlinkedy"
-    fill
-    className="object-cover"
-  />
-</button>
+                onClick={() => handleOAuthLogin("imlinkedy")}
+                className="relative w-7 h-7 rounded-full overflow-hidden flex items-center justify-center bg-gray-800 hover:bg-gray-700"
+                aria-label="Entrar com Imlinkedy"
+              >
+                <Image
+                  src="https://imlinked.vercel.app/favicon.png"
+                  alt="Imlinkedy"
+                  fill
+                  className="object-cover"
+                />
+              </button>
             </div>
           </div>
         </motion.div>
@@ -172,4 +154,3 @@ export default function Signin() {
     </div>
   );
 }
-
