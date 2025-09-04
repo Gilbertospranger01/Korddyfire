@@ -7,6 +7,7 @@ import { signIn } from "next-auth/react";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaGithub } from "react-icons/fa";
 import Image from "next/image";
+import Link from "next/link";
 
 import BackgroundImage from "@/components/backgroundimage";
 import Loadingconnection from "@/loadingpages/loadingconnection";
