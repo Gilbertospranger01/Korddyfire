@@ -43,7 +43,7 @@ export default function Signin() {
   const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "imlinkedy") => {
     try {
       if (provider === "imlinkedy") {
-        window.location.href = "https://imlinked.vercel.app/oauth/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=https://yourapp.com/home&response_type=code";
+        window.location.href = "https://imlinked.vercel.app/oauth/authorize?client_id=IMLINKEDY_CLIENT_ID&redirect_uri=https://korddyfirebase.vercel.app/home&response_type=code";
         return;
       }
       await signIn(provider, { callbackUrl: "/home" });
