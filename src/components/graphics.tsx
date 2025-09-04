@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useState, useEffect, useCallback } from "react";
-import api from "@/utils/api"; // seu axios custom
+import api from "@/utils/api";
 import { io } from "socket.io-client";
 
 type CombinedData = {
@@ -19,41 +19,60 @@ type CombinedData = {
   purchases: number;
 };
 
+type Sale = {
+  year: number;
+  month: number;
+  price: number;
+};
+
+type Purchase = {
+  year: number;
+  month: number;
+  amount: number;
+};
+
 const socket = io("http://localhost:3500");
+
+const daysOfWeek = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
 
 function Graph() {
   const [data, setData] = useState<CombinedData[]>([]);
 
-  const daysOfWeek = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-  ];
+  const generateDailyData = (): CombinedData[] => {
+    const today = new Date();
+    const weekday = today.getDay();
+
+    return daysOfWeek.map((day, index) => ({
+      name: index === weekday ? "Today" : day,
+      sales: 0,
+      purchases: 0,
+    }));
+  };
 
   const fetchData = useCallback(async () => {
-try {
-      // Chama endpoints REST que você deve ter criado no backend
+    try {
       const [salesRes, purchasesRes] = await Promise.all([
-        api.get("/sales"),
-        api.get("/purchasing"),
+        api.get<Sale[]>("/sales"),
+        api.get<Purchase[]>("/purchasing"),
       ]);
-
-      const salesData = salesRes.data; // assume [{ year, month, price }, ...]
-      const purchasesData = purchasesRes.data; // assume [{ year, month, amount }, ...]
 
       const salesMap = new Map<string, number>();
       const purchasesMap = new Map<string, number>();
 
-      salesData.forEach((sale: unknown) => {
+      salesRes.data.forEach((sale) => {
         const key = `${sale.month}/${sale.year}`;
         salesMap.set(key, (salesMap.get(key) || 0) + sale.price);
       });
 
-      purchasesData.forEach((purchase: unknown) => {
+      purchasesRes.data.forEach((purchase) => {
         const key = `${purchase.month}/${purchase.year}`;
         purchasesMap.set(key, (purchasesMap.get(key) || 0) + purchase.amount);
       });
@@ -62,81 +81,52 @@ try {
       const currentMonth = today.getMonth() + 1;
       const currentYear = today.getFullYear();
 
-      const lastSixMonths = [];
+      const lastSixMonths: string[] = [];
       for (let i = 0; i < 6; i++) {
         let month = currentMonth - i;
         let year = currentYear;
-
         if (month <= 0) {
           month += 12;
           year -= 1;
         }
-
-        const key = `${month}/${year}`;
-        lastSixMonths.unshift(key);
+        lastSixMonths.unshift(`${month}/${year}`);
       }
 
-      const dataExists = lastSixMonths.some(
-        (key) => salesMap.has(key) || purchasesMap.has(key)
-      );
-
-      if (dataExists) {
-        const combinedData = lastSixMonths.map((key) => {
-          const [month, year] = key.split("/");
-          const monthName = new Date(`${year}-${month}`).toLocaleString(
-            "default",
-            { month: "short" }
-          );
-          return {
-            name: `${monthName}/${year}`,
-            sales: salesMap.get(key) || 0,
-            purchases: purchasesMap.get(key) || 0,
-          };
+      const combinedData = lastSixMonths.map((key) => {
+        const [month, year] = key.split("/").map(Number);
+        const monthName = new Date(year, month - 1).toLocaleString("default", {
+          month: "short",
         });
-        setData(combinedData);
-      } else {
-        setData(generateDailyData());
-      }
+        return {
+          name: `${monthName}/${year}`,
+          sales: salesMap.get(key) || 0,
+          purchases: purchasesMap.get(key) || 0,
+        };
+      });
+
+      setData(combinedData.some((d) => d.sales || d.purchases) ? combinedData : generateDailyData());
     } catch (error) {
-console.error("Erro ao buscar dados:", error);
-setData(generateDailyData());
-}
-}, [daysOfWeek]);
+      console.error("Erro ao buscar dados:", error);
+      setData(generateDailyData());
+    }
+  }, []);
 
-  const generateDailyData = () => {
-    const today = new Date();
-    const weekday = today.getDay();
+  useEffect(() => {
+    fetchData();
+    socket.on("update-graph", fetchData);
 
-    const dailyData = daysOfWeek.map((day, index) => {
-      let name = "";
-      if (index === weekday) {
-        name = "Today";
-      } else {
-        name = day;
-      }
-      return { name, sales: 0, purchases: 0 };
-    });
+    return () => {
+      socket.off("update-graph", fetchData);
+    };
+  }, [fetchData]);
 
-    return dailyData;
-  };
-
-   useEffect(() => {
-fetchData();
-
-socket.on("update-graph", fetchData);
-
-return () => {
-socket.off("update-graph", fetchData);
-};
-}, [fetchData]);
-
-  function formatNumber(value: number): string {
+  const formatNumber = (value: number): string => {
     if (value >= 1_000_000_000_000) return (value / 1_000_000_000_000).toFixed(1) + "T";
     if (value >= 1_000_000_000) return (value / 1_000_000_000).toFixed(1) + "B";
     if (value >= 1_000_000) return (value / 1_000_000).toFixed(1) + "M";
     if (value >= 1_000) return (value / 1_000).toFixed(1) + "K";
     return value.toString();
-  }
+  };
 
   return (
     <div className="w-full h-100 pr-10 pb-16 pt-20 rounded-xl shadow-xl bg-gray-950 text-white">
@@ -162,22 +152,8 @@ socket.off("update-graph", fetchData);
               cursor={{ fill: "#374151" }}
               formatter={(value: number) => [formatNumber(value), ""]}
             />
-            <Area
-              type="monotone"
-              dataKey="sales"
-              stroke="#2563eb"
-              fillOpacity={1}
-              fill="url(#colorSales)"
-              name="Sales"
-            />
-            <Area
-              type="monotone"
-              dataKey="purchases"
-              stroke="#16a34a"
-              fillOpacity={1}
-              fill="url(#colorPurchases)"
-              name="Purchases"
-            />
+            <Area type="monotone" dataKey="sales" stroke="#2563eb" fillOpacity={1} fill="url(#colorSales)" name="Sales" />
+            <Area type="monotone" dataKey="purchases" stroke="#16a34a" fillOpacity={1} fill="url(#colorPurchases)" name="Purchases" />
           </AreaChart>
         ) : (
           <div className="w-full h-full flex justify-center items-center text-gray-500">
