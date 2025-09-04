@@ -90,7 +90,7 @@ export default function RecoverPassword() {
             </button>
           </form>
 
-          <Link href="/auth/signin" className="mt-4 text-blue-400 hover:underline">
+          <Link href="/signin" className="mt-4 text-blue-400 hover:underline">
             Back to Signin
           </Link>
         </motion.div>
