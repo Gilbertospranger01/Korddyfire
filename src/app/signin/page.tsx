@@ -41,16 +41,28 @@ export default function Signin() {
   };
 
   const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "imlinkedy") => {
-    try {
-      if (provider === "imlinkedy") {
-        window.location.href = "https://imlinked.vercel.app/oauth/authorize?client_id=IMLINKEDY_CLIENT_ID&redirect_uri=https://korddyfirebase.vercel.app/home&response_type=code";
-        return;
-      }
-      await signIn(provider, { callbackUrl: "/home" });
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido ao fazer login.");
+  try {
+    if (provider === "imlinkedy") {
+      const client_id = "SEU_CLIENT_ID";        // do LinkedApp
+      const client_secret = "SEU_CLIENT_SECRET"; // do LinkedApp
+
+      // Você pode abrir um modal ou prompt para o email do usuário
+      const email = prompt("Digite seu email cadastrado no Imlinkedy:");
+      if (!email) return;
+
+      const res = await api.post("/imlinkedy-login", { client_id, client_secret, email });
+      const token = res.data.access;
+
+      localStorage.setItem("token", token);
+      router.push("/home");
+      return;
     }
-  };
+
+    await signIn(provider, { callbackUrl: "/home" });
+  } catch (err: unknown) {
+    setError(err instanceof Error ? err.message : "Erro desconhecido ao fazer login.");
+  }
+};
 
   useEffect(() => {
     const updateOnlineStatus = () => setIsOnline(navigator.onLine);
