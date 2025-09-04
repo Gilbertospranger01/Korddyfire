@@ -20,7 +20,7 @@ export default function Signin() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isOnline, setIsOnline] = useState(true);
 
-  // Atualiza o estado de online/offline
+  // Atualiza o estado online/offline
   useEffect(() => {
     const updateOnlineStatus = () => setIsOnline(navigator.onLine);
     window.addEventListener("online", updateOnlineStatus);
@@ -32,7 +32,7 @@ export default function Signin() {
     };
   }, []);
 
-  // Input handler
+  // Atualiza formData
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -57,8 +57,8 @@ export default function Signin() {
   const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "imlinkedy") => {
     try {
       if (provider === "imlinkedy") {
-        window.location.href =
-          "https://imlinked.vercel.app/oauth/authorize?client_id=IMLINKEDY_CLIENT_ID&redirect_uri=https://korddyfirebase.vercel.app/home&response_type=code";
+        // Redireciona para OAuth ImLinkedy
+        window.location.href = `https://imlinked.vercel.app/oauth/authorize?client_id=IMLINKEDY_CLIENT_ID&redirect_uri=https://korddyfirebase.vercel.app/home&response_type=code`;
         return;
       }
       await signIn(provider, { callbackUrl: "/home" });
@@ -80,16 +80,16 @@ export default function Signin() {
       <div className="flex flex-col justify-center items-center w-full md:w-1/2 px-6 md:px-16 gap-6">
         <h1 className="text-3xl font-bold">Entrar no ImLinkedy</h1>
 
-        {/* Avatar de exemplo do ImLinkedy */}
+        {/* Avatar exemplo */}
         <Image
-          src="https://imlinked.vercel.app/path/to/avatar.jpg" // substitua pela URL real
+          src="https://imlinked.vercel.app/path/to/avatar.jpg"
           alt="Avatar ImLinkedy"
           width={120}
           height={120}
-          className="rounded-full"
+          className="rounded-full object-cover"
         />
 
-        {/* Formulário de login */}
+        {/* Formulário */}
         <form onSubmit={handleSignIn} className="flex flex-col w-full gap-4">
           <Input
             type="email"
@@ -115,37 +115,26 @@ export default function Signin() {
 
         {/* Botões OAuth */}
         <div className="flex gap-4 mt-4">
-          <button
-            onClick={() => handleOAuthLogin("google")}
-            className="btn-oauth"
-            title="Login com Google"
-          >
+          <button onClick={() => handleOAuthLogin("google")} className="btn-oauth" title="Login com Google">
             <FcGoogle size={24} />
           </button>
-          <button
-            onClick={() => handleOAuthLogin("facebook")}
-            className="btn-oauth"
-            title="Login com Facebook"
-          >
+          <button onClick={() => handleOAuthLogin("facebook")} className="btn-oauth" title="Login com Facebook">
             <FaFacebook size={24} color="#3b5998" />
           </button>
-          <button
-            onClick={() => handleOAuthLogin("github")}
-            className="btn-oauth"
-            title="Login com GitHub"
-          >
+          <button onClick={() => handleOAuthLogin("github")} className="btn-oauth" title="Login com GitHub">
             <FaGithub size={24} />
           </button>
           <button
             onClick={() => handleOAuthLogin("imlinkedy")}
-            className="btn-oauth"
+            className="btn-oauth rounded-full overflow-hidden"
             title="Login com ImLinkedy"
           >
             <Image
-              src="/icons/imlinkedy.png" // ícone local do ImLinkedy
+              src="/icons/imlinkedy.png"
               alt="ImLinkedy"
-              width={24}
-              height={24}
+              width={32}
+              height={32}
+              className="object-cover"
             />
           </button>
         </div>
