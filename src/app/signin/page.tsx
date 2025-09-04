@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { AxiosError } from "axios";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,7 +9,6 @@ import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaGithub, FaLock } from "react-icons/fa";
 import BackgroundImage from "@/components/backgroundimage";
 import Loadingconnection from "@/loadingpages/loadingconnection";
-import api from "@/utils/api";
 import Input from "@/components/ui/input";
 import Image from "next/image";
 
@@ -27,24 +25,19 @@ export default function Signin() {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    // Se quiser login email/senha via API
     try {
-      await api.post("/signin", formData);
+      // await api.post("/signin", formData);
       router.push("/home");
     } catch (err: unknown) {
-      if (err instanceof AxiosError) {
-        setError(err.response?.data?.error || "Erro ao fazer login.");
-      } else {
-        setError("Erro ao fazer login.");
-      }
+      setError("Erro ao fazer login.");
     }
   };
 
-  const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "imlinkedy") => {
-    try {
-      await signIn(provider, { callbackUrl: "/home" });
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido ao fazer login.");
-    }
+  const handleOAuthLogin = (provider: "google" | "facebook" | "github" | "imlinkedy") => {
+    signIn(provider, { callbackUrl: "/home" }).catch(err =>
+      setError(err instanceof Error ? err.message : "Erro desconhecido")
+    );
   };
 
   useEffect(() => {
