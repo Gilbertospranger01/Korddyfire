@@ -143,7 +143,7 @@ export default function Signin() {
               {/* Botão Imlinkedy */}
               <button
   onClick={() => handleOAuthLogin("imlinkedy")}
-  className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-gray-800 hover:bg-gray-700"
+  className="relative w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-gray-800 hover:bg-gray-700"
   aria-label="Entrar com Imlinkedy"
 >
   <Image
