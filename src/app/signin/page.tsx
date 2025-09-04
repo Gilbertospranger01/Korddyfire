@@ -14,7 +14,6 @@ import api from "@/utils/api";
 import Input from "@/components/ui/input";
 import Image from "next/image";
 
-
 export default function Signin() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -128,31 +127,52 @@ export default function Signin() {
             </Link>
           </p>
 
-          <div className="flex flex-col items-center mt-4 mb-10">
-            <p className="text-gray-600 text-sm mb-2">Ou entre com</p>
-            <div className="flex space-x-6">
-              <button onClick={() => handleOAuthLogin("google")} className="text-white" aria-label="Entrar com Google">
-                <FcGoogle size={30} />
+          <div className="flex flex-col items-center mt-4 mb-10 w-full">
+            <div className="relative w-full my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-700"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-gray-950 text-gray-400">Ou entre com</span>
+              </div>
+            </div>
+            
+            <div className="flex justify-center space-x-4 w-full">
+              <button 
+                onClick={() => handleOAuthLogin("google")} 
+                className="flex items-center justify-center w-12 h-12 bg-white rounded-full hover:bg-gray-100 transition-colors shadow-md"
+                aria-label="Entrar com Google"
+              >
+                <FcGoogle size={24} />
               </button>
-              <button onClick={() => handleOAuthLogin("facebook")} className="text-blue-600" aria-label="Entrar com Facebook">
-                <FaFacebook size={30} />
+              <button 
+                onClick={() => handleOAuthLogin("facebook")} 
+                className="flex items-center justify-center w-12 h-12 bg-[#3b5998] rounded-full hover:bg-[#334d84] transition-colors shadow-md"
+                aria-label="Entrar com Facebook"
+              >
+                <FaFacebook size={24} className="text-white" />
               </button>
-              <button onClick={() => handleOAuthLogin("github")} className="text-white" aria-label="Entrar com GitHub">
-                <FaGithub size={30} />
+              <button 
+                onClick={() => handleOAuthLogin("github")} 
+                className="flex items-center justify-center w-12 h-12 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors shadow-md"
+                aria-label="Entrar com GitHub"
+              >
+                <FaGithub size={24} className="text-white" />
               </button>
-              {/* Botão Imlinkedy */}
+              {/* Botão Imlinkedy corrigido */}
               <button
                 onClick={() => handleOAuthLogin("imlinkedy")}
-                className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-gray-800 hover:bg-gray-700"
+                className="flex items-center justify-center w-12 h-12 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors shadow-md"
                 aria-label="Entrar com Imlinkedy"
               >
-                <Image
-                  src="https://imlinked.vercel.app/favicon.png"
-                  alt="Imlinkedy"
-                  width={28}
-                  height={28}
-                  className="object-cover"
-                />
+                <div className="relative w-6 h-6">
+                  <Image
+                    src="https://imlinked.vercel.app/favicon.png"
+                    alt="Imlinkedy"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
               </button>
             </div>
           </div>
