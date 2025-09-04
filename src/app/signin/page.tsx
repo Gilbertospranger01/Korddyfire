@@ -62,7 +62,6 @@ export default function Signin() {
 
   return (
     <div className="flex flex-col md:flex-row w-full h-screen bg-gray-100 overflow-auto">
-      
       {/* Background só aparece em desktop */}
       <div className="hidden md:flex md:w-1/2 h-full">
         <BackgroundImage />
@@ -108,6 +107,7 @@ export default function Signin() {
                   Recuperar
                 </Link>
               </p>
+
               <button
                 type="submit"
                 className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 w-full rounded focus:outline-none focus:shadow-outline"
