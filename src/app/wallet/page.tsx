@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { FiPlus, FiArrowUpRight, FiSend, FiArrowLeft } from 'react-icons/fi';
 import { FaCheckCircle, FaClock, FaTimesCircle } from 'react-icons/fa';
@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import Side_Seller_Dashboard from '@/components/sideSellerdashboard';
 import Loadingpage from '@/loadingpages/loadingpage';
 
+// Interfaces
 interface Transaction {
   id: number;
   amount: number;
@@ -27,18 +28,28 @@ interface User {
   picture: string | null;
 }
 
+interface QuickActionButtonProps {
+  icon: React.ReactNode;
+  label: string;
+  onClick?: () => void;
+}
+
+// Main Component
 const Wallet = () => {
   const [balance, setBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const { session } = useAuth();
   const router = useRouter();
 
+  // Extract user safely
   const user: User | null = useMemo(() => {
     if (!session?.user) return null;
+
     const { id, user_metadata } = session.user as {
       id: string;
       user_metadata?: { name?: string; avatar_url?: string };
     };
+
     return {
       id,
       name: user_metadata?.name || 'User',
@@ -46,6 +57,7 @@ const Wallet = () => {
     };
   }, [session]);
 
+  // Fetch wallet data
   useEffect(() => {
     if (!user) return;
 
@@ -75,7 +87,7 @@ const Wallet = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white overflow-hidden">
-      {/* Header fixo no topo */}
+      {/* Header */}
       <header className="flex fixed w-full justify-between z-50 items-center p-4 bg-gray-800 shadow-md border-b border-gray-400">
         <div className="flex items-center">
           <button
@@ -164,12 +176,7 @@ const Wallet = () => {
   );
 };
 
-interface QuickActionButtonProps {
-  icon: JSX.Element;
-  label: string;
-  onClick?: () => void;
-}
-
+// Quick Action Button Component
 const QuickActionButton = ({ icon, label, onClick }: QuickActionButtonProps) => (
   <button
     className="flex items-center gap-2 bg-green-500 hover:bg-green-700 p-3 rounded-lg w-full cursor-pointer"
@@ -179,6 +186,7 @@ const QuickActionButton = ({ icon, label, onClick }: QuickActionButtonProps) => 
   </button>
 );
 
+// Transaction Item Component
 const TransactionItem = ({ txn }: { txn: Transaction }) => {
   const getStatusIcon = () => {
     switch (txn.status) {
