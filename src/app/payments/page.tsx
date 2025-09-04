@@ -5,12 +5,10 @@ import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import CheckoutForm from "@/components/CheckoutForm";
 
-const stripePromise = loadStripe("pk_test_51QAcWD2KBWOx0p4bx0EAy5M7sgcYhInEDF7Rm19aqe5pPGzaLWEhtgOFrOHFMyHj1Gz9h800ThXvzjm4");
+const stripePromise = loadStripe("pk_test_...");
 
 export default function CheckoutPage() {
   const searchParams = useSearchParams();
-
-  // Certifique-se de usar apenas client-side
   if (!searchParams) return null;
 
   const amount = Number(searchParams.get("amount") || 0);
