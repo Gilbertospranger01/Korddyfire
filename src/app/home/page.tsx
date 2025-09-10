@@ -33,6 +33,7 @@ const Home = () => {
       setUsername(res.data.username || "Usuário");
       setProfilePicture(res.data.picture || null);
     } catch (err) {
+      console.log(username, profilePicture)
       console.error("Erro ao buscar perfil", err);
       router.push("/signin");
     }
