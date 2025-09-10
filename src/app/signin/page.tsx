@@ -30,15 +30,14 @@ export default function Signin() {
     setError(null);
     setLoading(true);
     try {
-      const response = await api.post("/signin", formData);
-      // Aqui você pode salvar token ou dados do usuário
-      router.push("/home");
-    } catch (err: unknown) {
-      setError("Erro ao fazer login.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  await api.post("/signin", formData);
+  router.push("/home");
+} catch {
+  setError("Erro ao fazer login.");
+} finally {
+  setLoading(false);
+}
+};
 
   // Login via provedores OAuth
   const handleOAuthLogin = async (
