@@ -2,6 +2,37 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
+interface Profile {
+  id: string;
+  username: string;
+  full_name?: string;
+  email?: string;
+  avatar_url?: string;
+  phone?: string;
+  birth_date?: string;
+  gender?: string;
+  bi_passport?: string;
+  nationality?: string;
+  country?: string;
+  state_province?: string;
+  city?: string;
+  neighborhood?: string;
+  street?: string;
+  house_apartment?: string;
+  postal_code?: string;
+  language?: string;
+  currency?: string;
+  social_links?: string[];
+  website?: string;
+  work_local?: string;
+  occupation?: string;
+  company?: string;
+  education?: string;
+  skills?: string[];
+  interests?: string[];
+}
+
+
 const handler = NextAuth({
   providers: [
     GoogleProvider({
@@ -21,7 +52,7 @@ const handler = NextAuth({
       },
       token: "https://imlinked.vercel.app/oauth/token",
       userinfo: "https://imlinked.vercel.app/oauth/me",
-      profile(profile: any) {
+      profile(profile: Profile) {
         return {
           id: profile.id || profile.username,
           name: profile.full_name || profile.username,
