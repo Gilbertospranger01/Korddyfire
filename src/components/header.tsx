@@ -12,6 +12,14 @@ import { IoChatboxEllipses } from "react-icons/io5";
 import ButtonTheme from "../app/buttonTheme";
 import api from "@/utils/api";
 
+type Product = {
+  id: string;
+  name: string;
+  price: number;
+  stock: number;
+  image?: string;
+};
+
 type User = {
   id: string;
   name: string;
@@ -22,9 +30,7 @@ const Header = () => {
   const router = useRouter();
   const { showSidebar, setShowSidebar } = useSidebar();
 
-  const [products, setProducts] = useState<
-    { id: string; name: string; price: number; image?: string; stock: number }[]
-  >([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [username, setUsername] = useState<string>("Usuário");
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,29 +38,39 @@ const Header = () => {
   const [loading, setLoading] = useState(false);
   const [balance, setBalance] = useState<number>(0);
 
-  // Buscar saldo
-useEffect(() => {
-  const fetchBalance = async () => {
+  // --- Buscar saldo ---
+  const fetchBalance = useCallback(async () => {
     try {
       const res = await api.get("/wallets");
-
-      // Atualiza balance usando o valor mais recente
-      setBalance((prev) => {
-        console.log("Saldo atual antes de atualizar:", prev);
-        return res.data.balance ?? prev; // se não houver saldo, mantém o valor atual
-      });
+      setBalance(res.data.balance ?? balance);
     } catch (err) {
-      console.log(balance);
       console.error("Erro ao buscar saldo", err);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [balance]);
 
-  fetchBalance();
-}, []);
+  // --- Buscar todos os produtos ---
+  const fetchProducts = useCallback(async () => {
+    try {
+      const res = await api.get("/products");
+      setProducts(res.data || []);
+    } catch (err) {
+      console.error("Erro ao buscar produtos", err);
+    }
+  }, []);
 
-  // Buscar produtos filtrados
+  // --- Buscar perfil do usuário ---
+  const fetchUserProfile = useCallback(async () => {
+    try {
+      const res = await api.get("/user");
+      setUsername(res.data.username || "Usuário");
+      setProfilePicture(res.data.picture || null);
+    } catch (err) {
+      console.error("Erro ao buscar perfil", err);
+      router.push("/signin");
+    }
+  }, [router]);
+
+  // --- Buscar produtos filtrados ---
   const handleSearch = useCallback(async () => {
     if (!searchTerm.trim()) return;
     setLoading(true);
@@ -63,13 +79,13 @@ useEffect(() => {
       const res = await api.get(`/products/${searchTerm}`);
       setProducts(res.data || []);
     } catch (err) {
-      console.error("Erro ao buscar produtos", err);
+      console.error("Erro ao buscar produtos filtrados", err);
     } finally {
       setLoading(false);
     }
   }, [searchTerm]);
 
-  // Debounce na pesquisa
+  // --- Debounce na pesquisa ---
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       handleSearch();
@@ -77,36 +93,14 @@ useEffect(() => {
     return () => clearTimeout(delayDebounce);
   }, [searchTerm, handleSearch]);
 
-  // Buscar todos os produtos
+  // --- Fetch inicial ---
   useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const res = await api.get("/products");
-        setProducts(res.data || []);
-      } catch (err) {
-        console.log(products);
-        console.error("Erro ao buscar produtos", err);
-      } finally {
-        setLoading(false);
-      }
-    }
+    setLoading(true);
+    fetchBalance();
     fetchProducts();
-  }, []);
-
-  // Buscar perfil do usuário
-  useEffect(() => {
-    async function fetchUserProfile() {
-      try {
-        const res = await api.get("/user");
-        setUsername(res.data.username || "Usuário");
-        setProfilePicture(res.data.picture || null);
-      } catch (err) {
-        console.error("Erro ao buscar perfil", err);
-        router.push("/signin");
-      }
-    }
     fetchUserProfile();
-  }, [session, router]);
+    setLoading(false);
+  }, [fetchBalance, fetchProducts, fetchUserProfile]);
 
   if (!session) {
     return (
