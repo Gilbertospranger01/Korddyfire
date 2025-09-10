@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { Heart } from "lucide-react";
 import Header from "@/components/header";
@@ -20,37 +20,29 @@ type Product = {
 const Home = () => {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
-  const [profilePicture, setProfilePicture] = useState<string | null>(null);
-  const [username, setUsername] = useState<string>("Usuário");
   const [loading, setLoading] = useState(true);
   const [loadin, setLoadin] = useState<Record<string, boolean>>({});
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-  const fetchUser = async () => {
-    try {
-      const res = await api.get("/user");
-      setUsername(res.data.username || "Usuário");
-      setProfilePicture(res.data.picture || null);
-    } catch (err) {
-      console.log(username, profilePicture)
-      console.error("Erro ao buscar perfil", err);
-      router.push("/signin");
-    }
-  };
-  fetchUser();
-}, [router]);
+    const fetchData = async () => {
+      try {
+        const userRes = await api.get("/user");
+        // Só logar se quiser, não usado no JSX
+        console.log("User:", userRes.data.username, userRes.data.picture);
 
-  const fetchProducts = useCallback(async () => {
-  try {
-    const res = await api.get("/products");
-    setProducts(res.data || []);
-  } catch (err) {
-    console.error("Erro ao buscar produtos", err);
-  } finally {
-    setLoading(false);
-  }
-}, []);
+        const prodRes = await api.get("/products");
+        setProducts(prodRes.data || []);
+      } catch (err) {
+        console.error("Erro ao buscar dados", err);
+        router.push("/signin");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [router]);
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -64,16 +56,8 @@ const Home = () => {
     }, 1500);
   };
 
-  useEffect(() => {
-    fetchUser();
-    fetchProducts();
-  }, [fetchUser, fetchProducts]);
-
   const formatPrice = (value: number) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(value);
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
 
   if (loading) return <Loadingpage />;
 
@@ -126,7 +110,7 @@ const Home = () => {
       </main>
       <footer className="fixed left-0 bottom-0 w-full py-3 bg-gray-950">
         <div className="container mx-auto text-center">
-          <p className="text-gray-900 dark:text-white">&copy; 2025 Korddyfire. from Korddy All rights reserved.</p>
+          <p className="text-gray-900 dark:text-white">&copy; 2025 Korddyfire. All rights reserved.</p>
         </div>
       </footer>
     </div>
