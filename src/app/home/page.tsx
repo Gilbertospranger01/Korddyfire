@@ -26,17 +26,19 @@ const Home = () => {
   const [loadin, setLoadin] = useState<Record<string, boolean>>({});
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
+  useEffect(() => {
   const fetchUser = async () => {
     try {
       const res = await api.get("/user");
       setUsername(res.data.username || "Usuário");
       setProfilePicture(res.data.picture || null);
     } catch (err) {
-      console.log(profilePicture,username);
       console.error("Erro ao buscar perfil", err);
       router.push("/signin");
     }
   };
+  fetchUser();
+}, [router]);
 
   const fetchProducts = async () => {
     try {
