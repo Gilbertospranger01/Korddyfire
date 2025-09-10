@@ -33,20 +33,25 @@ const Header = () => {
   const [balance, setBalance] = useState<number>(0);
 
   // Buscar saldo
-  useEffect(() => {
-    async function fetchBalance() {
-      try {
-        const res = await api.get("/wallets");
-        setBalance(res.data.balance || 0);
-      } catch (err) {
-        console.log(products, balance);
-        console.error("Erro ao buscar saldo", err);
-      } finally {
-        setLoading(false);
-      }
+useEffect(() => {
+  const fetchBalance = async () => {
+    try {
+      const res = await api.get("/wallets");
+
+      // Atualiza balance usando o valor mais recente
+      setBalance((prev) => {
+        console.log("Saldo atual antes de atualizar:", prev);
+        return res.data.balance ?? prev; // se não houver saldo, mantém o valor atual
+      });
+    } catch (err) {
+      console.error("Erro ao buscar saldo", err);
+    } finally {
+      setLoading(false);
     }
-    fetchBalance();
-  }, []);
+  };
+
+  fetchBalance();
+}, []);
 
   // Buscar produtos filtrados
   const handleSearch = useCallback(async () => {
