@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { Heart } from "lucide-react";
 import Header from "@/components/header";
@@ -40,15 +40,16 @@ const Home = () => {
   fetchUser();
 }, [router]);
 
-  const fetchProducts = async () => {
-    try {
-      const res = await api.get("/products");
-      setProducts(res.data || []);
-    } catch (err) {
-      console.error("Erro ao buscar produtos", err);
-    }
+  const fetchProducts = useCallback(async () => {
+  try {
+    const res = await api.get("/products");
+    setProducts(res.data || []);
+  } catch (err) {
+    console.error("Erro ao buscar produtos", err);
+  } finally {
     setLoading(false);
-  };
+  }
+}, []);
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
