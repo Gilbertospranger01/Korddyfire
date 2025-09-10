@@ -44,6 +44,7 @@ useEffect(() => {
         return res.data.balance ?? prev; // se não houver saldo, mantém o valor atual
       });
     } catch (err) {
+      console.log(balance);
       console.error("Erro ao buscar saldo", err);
     } finally {
       setLoading(false);
@@ -83,6 +84,7 @@ useEffect(() => {
         const res = await api.get("/products");
         setProducts(res.data || []);
       } catch (err) {
+        console.log(products);
         console.error("Erro ao buscar produtos", err);
       } finally {
         setLoading(false);
