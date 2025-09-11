@@ -1,3 +1,4 @@
+// src/app/api/auth/[...nextauth]/route.ts
 import NextAuth, { type User } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
@@ -31,7 +32,6 @@ interface Profile {
   interests?: string[];
 }
 
-// Definindo um tipo customizado para o usuário do provider
 interface CustomUser extends User {
   userDetails?: Record<string, unknown>;
 }
@@ -60,7 +60,7 @@ const handler = NextAuth({
           id: profile.id || profile.username,
           name: profile.full_name || profile.username,
           email: profile.email,
-          image: profile.avatar_url || null,
+          image: profile.avatar_url ?? null,
           userDetails: {
             phone: profile.phone,
             birth_date: profile.birth_date,
@@ -91,21 +91,16 @@ const handler = NextAuth({
   ],
   callbacks: {
     async jwt({ token, account, user }) {
-      if (account) token.accessToken = account.access_token;
+      if (account?.access_token) token.accessToken = account.access_token;
 
-      // 👇 Fazemos cast de user para CustomUser para ter acesso ao campo extra
       const customUser = user as CustomUser;
-      if (customUser?.userDetails) {
-        token.userDetails = customUser.userDetails;
-      }
+      if (customUser?.userDetails) token.userDetails = customUser.userDetails;
 
       return token;
     },
     async session({ session, token }) {
       session.accessToken = token.accessToken;
-      if (token.userDetails) {
-        session.userDetails = token.userDetails as Record<string, unknown>;
-      }
+      if (token.userDetails) session.userDetails = token.userDetails;
       return session;
     },
   },
