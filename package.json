@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "server": "nodemon"
+    "server": "nodemon",
+    "migrate": "sequelize-cli db:migrate"
   },
   "dependencies": {
     "@nextui-org/react": "^2.6.11",
