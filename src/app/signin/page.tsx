@@ -19,12 +19,12 @@ type FormData = {
   password: string;
 };
 
-export default function Signin(): JSX.Element {
+export default function Signin() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({ email: "", password: "" });
-  const [isOnline, setIsOnline] = useState<boolean>(true);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -39,8 +39,7 @@ export default function Signin(): JSX.Element {
       await api.post("/signin", formData);
       router.push("/home");
     } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message);
-      else setError("Erro ao fazer login.");
+      setError(err instanceof Error ? err.message : "Erro ao fazer login.");
     } finally {
       setLoading(false);
     }
@@ -52,25 +51,16 @@ export default function Signin(): JSX.Element {
     setError(null);
     setLoading(true);
     try {
-      // signIn retorna SignInResponse | undefined. Não conta com user.
       const result = await signIn(provider, { redirect: false });
-      if (!result?.ok) {
-        // next-auth pode fornecer `error` via URL redirection. Aqui tratamos generico.
-        throw new Error("Falha no login via provedor.");
-      }
+      if (!result?.ok) throw new Error("Falha no login via provedor.");
 
-      // Após signIn com redirect: false, obter sessão garante os dados do user.
       const session: Session | null = await getSession();
-      if (!session || !session.user) throw new Error("Dados do provedor não encontrados.");
+      if (!session?.user) throw new Error("Dados do provedor não encontrados.");
 
-      // Envia ao backend para criar/validar usuário
-      // session.user pode conter `{ name, email, image }` ou campos customizados.
       await api.post("/signin-providers", session.user);
-
       router.push("/home");
     } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message);
-      else setError("Erro desconhecido");
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
       setLoading(false);
     }
@@ -129,7 +119,10 @@ export default function Signin(): JSX.Element {
             <div className="flex flex-col space-y-4 mt-4">
               <p className="text-white text-xs text-right">
                 Esqueceu a senha?{" "}
-                <Link href="/user/recover_password" className="text-blue-400 hover:text-blue-600 ml-2">
+                <Link
+                  href="/user/recover_password"
+                  className="text-blue-400 hover:text-blue-600 ml-2"
+                >
                   Recuperar
                 </Link>
               </p>
