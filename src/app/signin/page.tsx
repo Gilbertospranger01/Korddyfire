@@ -60,7 +60,7 @@ export default function Signin() {
       if (!session?.user) throw new Error("Dados do provedor não encontrados.");
 
       // Envia TUDO para o backend
-      await axios.post("/api/signin-providers", session.user);
+      await axios.post("/signin-providers", session.user);
 
       router.push("/home");
     } catch (err: unknown) {
