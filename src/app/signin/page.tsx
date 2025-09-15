@@ -179,7 +179,7 @@ export default function Signin() {
               </button>
 
               <button
-                onClick={() => handleOAuthLogin("github")}
+                onclick=(() => signIn("github", { callbackUrl: "/home" })}
                 className="text-white"
                 aria-label="Entrar com GitHub"
                 type="button"
