@@ -5,10 +5,8 @@ import FacebookProvider from "next-auth/providers/facebook";
 import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-// ✅ Toda autenticação por email/senha ou custom OAuth vai via backend
-// ✅ Não usamos Sequelize nem modelos do backend aqui
-
-export const authOptions = {
+// Todas as configs internas, mas não exporte authOptions
+const options = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -32,7 +30,6 @@ export const authOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials.password) return null;
 
-        // Chamando seu backend para autenticar Imlinkedy
         const res = await fetch(`${process.env.BACKEND_URL}/api/auth/imlinkedy`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -41,32 +38,25 @@ export const authOptions = {
 
         if (!res.ok) return null;
 
-        const user = await res.json(); // deve retornar um objeto do tipo User
+        const user = await res.json();
         return user;
       },
     }),
   ],
-  session: {
-    strategy: "jwt",
-  },
-  jwt: {
-    secret: process.env.JWT_SECRET,
-  },
+  session: { strategy: "jwt" },
+  jwt: { secret: process.env.JWT_SECRET },
   callbacks: {
     async jwt({ token, user }) {
-      if (user) {
-        // Copia todos os campos que vieram do provider
-        token = { ...token, ...user };
-      }
+      if (user) token = { ...token, ...user };
       return token;
     },
     async session({ session, token }) {
-      // Session vai refletir exatamente os dados retornados pelo provider
       session.user = { ...token };
       return session;
     },
   },
 };
 
-const handler = NextAuth(authOptions);
+// Exportando apenas o handler
+const handler = NextAuth(options);
 export { handler as GET, handler as POST };
