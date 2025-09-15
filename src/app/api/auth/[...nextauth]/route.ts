@@ -4,13 +4,11 @@ import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
-import SequelizeAdapter from "@next-auth/sequelize-adapter"; // default import
-import { sequelize } from "@/config/sequelize";
-import { User } from "@/models/schemas/auth/User";
-import bcrypt from "bcryptjs";
+
+// ✅ Toda autenticação por email/senha ou custom OAuth vai via backend
+// ✅ Não usamos Sequelize nem modelos do backend aqui
 
 export const authOptions = {
-  adapter: SequelizeAdapter(sequelize),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -33,12 +31,17 @@ export const authOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials.password) return null;
-        const user = await User.findOne({ where: { email: credentials.email } });
-        if (!user) return null;
 
-        const valid = await bcrypt.compare(credentials.password, user.password!);
-        if (!valid) return null;
+        // Chamando seu backend para autenticar Imlinkedy
+        const res = await fetch(`${process.env.BACKEND_URL}/api/auth/imlinkedy`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(credentials),
+        });
 
+        if (!res.ok) return null;
+
+        const user = await res.json(); // deve retornar um objeto do tipo User
         return user;
       },
     }),
@@ -52,20 +55,14 @@ export const authOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.email = user.email;
-        token.name = user.name;
-        token.picture = user.picture_url;
+        // Copia todos os campos que vieram do provider
+        token = { ...token, ...user };
       }
       return token;
     },
     async session({ session, token }) {
-      session.user = {
-        id: token.id,
-        email: token.email,
-        name: token.name,
-        picture: token.picture,
-      };
+      // Session vai refletir exatamente os dados retornados pelo provider
+      session.user = { ...token };
       return session;
     },
   },
