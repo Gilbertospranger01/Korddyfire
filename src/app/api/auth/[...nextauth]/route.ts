@@ -1,12 +1,36 @@
 // app/api/auth/[...nextauth]/route.ts
-import NextAuth from "next-auth";
+import NextAuth, { JWT } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 
+// Tipagem do usuário (retorno de qualquer provider ou backend)
+export type User = {
+  id: string;
+  name?: string;
+  username?: string;
+  email?: string;
+  picture_url?: string;
+  full_name?: string;
+  nickname?: string;
+  phone?: string;
+  birthdate?: string;
+  gender?: string;
+  slug?: string;
+  provider_id?: string;
+  provider?: string;
+  provider_type?: string;
+  phone_verified?: boolean;
+  email_verified?: boolean;
+  password?: string;
+  nationality?: string;
+  terms_and_policies?: boolean;
+  created_at?: string | Date;
+  updated_at?: string | Date;
+  [key: string]: unknown;
+};
 
-// Todas as configs internas, mas não exporte authOptions
 const options = {
   providers: [
     GoogleProvider({
@@ -39,25 +63,32 @@ const options = {
 
         if (!res.ok) return null;
 
-        const user = await res.json();
+        const user: User = await res.json();
         return user;
       },
     }),
   ],
+
   session: { strategy: "jwt" },
   jwt: { secret: process.env.JWT_SECRET },
+
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) token = { ...token, ...user };
+    // JWT callback
+    async jwt({ token, user }: { token: JWT; user?: User }) {
+      if (user) {
+        token = { ...token, ...user };
+      }
       return token;
     },
-    async session({ session, token }) {
+
+    // Session callback
+    async session({ session, token }: { session: any; token: JWT }) {
       session.user = { ...token };
       return session;
     },
   },
 };
 
-// Exportando apenas o handler
+// Exportando apenas o handler para Next.js App Router
 const handler = NextAuth(options);
 export { handler as GET, handler as POST };
