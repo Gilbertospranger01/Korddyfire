@@ -7,8 +7,8 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import type { AuthOptions } from "@auth/core/types";
 import type { User } from "@types/types";
 
-// Extendendo o tipo JWT para incluir User
-interface JWTToken extends Record<string, unknown> {
+// JWT token extendido
+interface JWTToken {
   id?: string;
   email?: string;
   name?: string;
@@ -16,9 +16,10 @@ interface JWTToken extends Record<string, unknown> {
   [key: string]: unknown;
 }
 
-// Extendendo a Session
-interface SessionWithUser extends Record<string, any> {
+// Session extendida
+interface SessionWithUser {
   user: JWTToken;
+  expires: string;
 }
 
 const authOptions: AuthOptions = {
@@ -65,13 +66,13 @@ const authOptions: AuthOptions = {
     secret: process.env.JWT_SECRET!,
   },
   callbacks: {
-    async jwt({ token, user }: { token: JWTToken; user?: User }) {
+    async jwt({ token, user }: { token: JWTToken; user?: User }): Promise<JWTToken> {
       if (user) {
-        token = { ...token, ...user };
+        return { ...token, ...user };
       }
       return token;
     },
-    async session({ session, token }: { session: SessionWithUser; token: JWTToken }) {
+    async session({ session, token }: { session: SessionWithUser; token: JWTToken }): Promise<SessionWithUser> {
       session.user = { ...token };
       return session;
     },
