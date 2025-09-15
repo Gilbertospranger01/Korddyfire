@@ -62,7 +62,7 @@ const handleSignup = useCallback(
       const response = await api.post("/auth/signup", formData);
       alert(response.data.message || "Cadastro realizado com sucesso!");
       router.push("/signin");
-    } } catch (error) {
+    } catch (error) {
   if (isAxiosError(error)) {
     console.error("Resposta de erro completa:", error.response?.data);
     console.error("Status do erro:", error.response?.status);
