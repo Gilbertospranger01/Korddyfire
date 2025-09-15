@@ -59,7 +59,7 @@ function Signup() {
       }
 
       try {
-        const response = await api.post("/auth/signup/", formData);
+        const response = await api.post("/auth/signup", formData);
         const { token, user } = response.data;
 
         localStorage.setItem("token", token);
