@@ -5,6 +5,7 @@ import FacebookProvider from "next-auth/providers/facebook";
 import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 
+
 // Todas as configs internas, mas não exporte authOptions
 const options = {
   providers: [
