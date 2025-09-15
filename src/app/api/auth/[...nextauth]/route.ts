@@ -5,7 +5,21 @@ import FacebookProvider from "next-auth/providers/facebook";
 import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 import type { AuthOptions } from "@auth/core/types";
-import type { User } from "@types/types"; // seu type do Imlinkedy
+import type { User } from "@types/types";
+
+// Extendendo o tipo JWT para incluir User
+interface JWTToken extends Record<string, unknown> {
+  id?: string;
+  email?: string;
+  name?: string;
+  picture_url?: string;
+  [key: string]: unknown;
+}
+
+// Extendendo a Session
+interface SessionWithUser extends Record<string, any> {
+  user: JWTToken;
+}
 
 const authOptions: AuthOptions = {
   providers: [
@@ -45,17 +59,19 @@ const authOptions: AuthOptions = {
     }),
   ],
   session: {
-    strategy: "jwt", // ✅ SessionStrategy correto
+    strategy: "jwt",
   },
   jwt: {
     secret: process.env.JWT_SECRET!,
   },
   callbacks: {
-    async jwt({ token, user }: { token: any; user?: User }) {
-      if (user) token = { ...token, ...user };
+    async jwt({ token, user }: { token: JWTToken; user?: User }) {
+      if (user) {
+        token = { ...token, ...user };
+      }
       return token;
     },
-    async session({ session, token }: { session: any; token: any }) {
+    async session({ session, token }: { session: SessionWithUser; token: JWTToken }) {
       session.user = { ...token };
       return session;
     },
