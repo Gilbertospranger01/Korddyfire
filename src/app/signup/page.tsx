@@ -24,62 +24,57 @@ function Signup() {
   });
 
   const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const { name, type, checked, value } = e.target;
-      const newValue = name === "username" ? value.slice(0, 12) : value;
-      setFormData((prev) => ({
-        ...prev,
-        [name]: type === "checkbox" ? checked : newValue,
-      }));
-    },
-    []
-  );
+  (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, type, checked, value } = e.target;
+    const newValue = name === "username" ? value.slice(0, 12) : value;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : newValue,
+    }));
+  },
+  []
+);
 
-  const handleSignup = useCallback(
-    async (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      setLoading(true);
+const handleSignup = useCallback(
+  async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
 
-      if (!formData.terms_and_policies) {
-        alert("Você deve aceitar os Termos de Uso e Política de Privacidade.");
-        setLoading(false);
-        return;
-      }
+    if (!formData.terms_and_policies) {
+      alert("Você deve aceitar os Termos de Uso e Política de Privacidade.");
+      setLoading(false);
+      return;
+    }
 
-      if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-        alert("Por favor, insira um e-mail válido.");
-        setLoading(false);
-        return;
-      }
+    if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+      alert("Por favor, insira um e-mail válido.");
+      setLoading(false);
+      return;
+    }
 
-      if (formData.password.length < 6) {
-        alert("A senha deve ter pelo menos 6 caracteres.");
-        setLoading(false);
-        return;
-      }
+    if (formData.password.length < 6) {
+      alert("A senha deve ter pelo menos 6 caracteres.");
+      setLoading(false);
+      return;
+    }
 
-      try {
-        const response = await api.post("/auth/signup", formData);
-        const { token, user } = response.data;
-
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user));
-
-        alert("Cadastro realizado com sucesso!");
-        router.push("/signin");
-      } catch (error) {
-        const errorMessage =
-          isAxiosError(error) && error.response?.data?.message
-            ? error.response.data.message
-            : "Erro desconhecido";
-        console.error("Erro de signup:", errorMessage);
-        alert(`Erro de Signup: ${errorMessage}`);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [formData, router]
-  );
+    try {
+      const response = await api.post("/auth/signup", formData);
+      alert(response.data.message || "Cadastro realizado com sucesso!");
+      router.push("/signin");
+    } catch (error) {
+      const errorMessage =
+        isAxiosError(error) && error.response?.data?.message
+          ? error.response.data.message
+          : "Erro desconhecido";
+      console.error("Erro de signup:", errorMessage);
+      alert(`Erro de Signup: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
+  },
+  [formData, router]
+);
 
   return (
     <div className="flex w-full h-screen bg-gray-100">
