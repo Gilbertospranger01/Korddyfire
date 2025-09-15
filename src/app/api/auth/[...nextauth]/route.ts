@@ -1,51 +1,13 @@
-// app/api/auth/[...nextauth]/route.ts
-import NextAuth, { Session } from "next-auth";
+// src/app/api/auth/[...nextauth]/route.ts
+import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
+import type { AuthOptions } from "@auth/core/types";
+import type { User } from "@types/types"; // seu type do Imlinkedy
 
-// Tipagem do usuário retornado pelo backend
-export type User = {
-  id: string;
-  name?: string;
-  username?: string;
-  email?: string;
-  picture_url?: string;
-  full_name?: string;
-  nickname?: string;
-  phone?: string;
-  birthdate?: string;
-  gender?: string;
-  slug?: string;
-  provider_id?: string;
-  provider?: string;
-  provider_type?: string;
-  phone_verified?: boolean;
-  email_verified?: boolean;
-  password?: string;
-  nationality?: string;
-  terms_and_policies?: boolean;
-  created_at?: string | Date;
-  updated_at?: string | Date;
-  [key: string]: unknown;
-};
-
-// Token customizado
-interface MyToken {
-  id?: string;
-  name?: string;
-  email?: string;
-  picture_url?: string;
-  [key: string]: unknown;
-}
-
-// Session customizada
-interface MySession extends Session {
-  user: MyToken;
-}
-
-const options = {
+const authOptions: AuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -82,22 +44,23 @@ const options = {
       },
     }),
   ],
-
-  session: { strategy: "jwt" },
-  jwt: { secret: process.env.JWT_SECRET },
-
+  session: {
+    strategy: "jwt", // ✅ SessionStrategy correto
+  },
+  jwt: {
+    secret: process.env.JWT_SECRET!,
+  },
   callbacks: {
-    async jwt({ token, user }: { token: MyToken; user?: User }) {
+    async jwt({ token, user }: { token: any; user?: User }) {
       if (user) token = { ...token, ...user };
       return token;
     },
-    async session({ session, token }: { session: MySession; token: MyToken }) {
+    async session({ session, token }: { session: any; token: any }) {
       session.user = { ...token };
       return session;
     },
   },
 };
 
-// Exportando apenas o handler
-const handler = NextAuth(options);
+const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
