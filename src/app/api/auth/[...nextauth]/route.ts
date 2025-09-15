@@ -5,7 +5,7 @@ import FacebookProvider from "next-auth/providers/facebook";
 import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 import type { AuthOptions } from "next-auth";
-import type { User } from "../../../../../types/types";
+import type { User } from "@/types/types";
 
 
 // Extensão do JWT
