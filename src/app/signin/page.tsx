@@ -154,6 +154,7 @@ export default function Signin() {
           <div className="flex flex-col items-center mt-4 mb-10">
             <p className="text-gray-600 text-sm mb-2">Ou entre com</p>
             <div className="flex space-x-6">
+              {/* Apenas providers permitidos */}
               <button
                 onClick={() => handleOAuthLogin("google")}
                 className="text-white"
