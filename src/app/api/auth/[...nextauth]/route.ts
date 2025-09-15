@@ -1,5 +1,5 @@
 // app/api/auth/[...nextauth]/route.ts
-import NextAuth, { JWT } from "next-auth";
+import NextAuth, { JWT, Session } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 import GitHubProvider from "next-auth/providers/github";
@@ -30,6 +30,20 @@ export type User = {
   updated_at?: string | Date;
   [key: string]: unknown;
 };
+
+// Custom token type
+interface MyToken extends JWT {
+  id?: string;
+  name?: string;
+  email?: string;
+  picture_url?: string;
+  [key: string]: unknown;
+}
+
+// Custom session type
+interface MySession extends Session {
+  user: MyToken;
+}
 
 const options = {
   providers: [
@@ -73,16 +87,12 @@ const options = {
   jwt: { secret: process.env.JWT_SECRET },
 
   callbacks: {
-    // JWT callback
-    async jwt({ token, user }: { token: JWT; user?: User }) {
-      if (user) {
-        token = { ...token, ...user };
-      }
+    async jwt({ token, user }: { token: MyToken; user?: User }) {
+      if (user) token = { ...token, ...user };
       return token;
     },
 
-    // Session callback
-    async session({ session, token }: { session: any; token: JWT }) {
+    async session({ session, token }: { session: MySession; token: MyToken }) {
       session.user = { ...token };
       return session;
     },
