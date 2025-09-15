@@ -1,7 +1,8 @@
 import NextAuth from "next-auth";
+import NextAuth from "next-auth"
+import GithubProvider from "next-auth/providers/github"
 import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
-import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 import type { AuthOptions } from "next-auth";
 import type { User } from "@/types/types"; // <-- substituído Profile por User
