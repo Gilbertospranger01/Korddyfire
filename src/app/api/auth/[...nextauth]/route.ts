@@ -6,15 +6,9 @@ import CredentialsProvider from "next-auth/providers/credentials";
 
 import type { Profile, ProfileDetails } from "@/utils/types";
 
-export interface JWTToken {
-  id?: string;
-  name?: string;
-  email?: string;
-  picture_url?: string;
-  username?: string;
+export interface JWTToken extends Partial<Profile> {
   provider?: string;
   provider_id?: string;
-  [key: string]: any; // permitir campos extras
 }
 
 export interface SessionWithUser {
@@ -43,18 +37,15 @@ export const authOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        // Aqui você chama seu backend ou DB para validar usuário
-        const user: Profile = await fetch(
-          `${process.env.API_URL}/auth/login`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(credentials),
-          }
-        ).then(res => res.json());
+        const res = await fetch(`${process.env.API_URL}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(credentials),
+        });
 
-        if (user?.id) return user;
-        return null;
+        const user: Profile = await res.json();
+        if (!user?.id) return null;
+        return user;
       },
     }),
   ],
@@ -67,26 +58,21 @@ export const authOptions = {
   callbacks: {
     async jwt({ token, user, account, profile }) {
       if (user) {
+        // inclui todos os campos opcionais de Profile e ProfileDetails
         token = {
           ...token,
-          id: user.id,
-          name: user.full_name ?? user.first_name ?? user.username,
-          email: user.email,
-          username: user.username,
-          picture_url: user.avatar_url,
-          provider: account?.provider,
-          provider_id: user.provider_id,
+          ...user,
+          provider: account?.provider ?? token.provider,
+          provider_id: user.provider_id ?? token.provider_id,
         };
       }
 
-      // permitimos dados adicionais de profile
       if (profile) {
         token = { ...token, ...profile };
       }
 
       return token as JWTToken;
     },
-
     async session({ session, token }) {
       session.user = token as JWTToken;
       return session as SessionWithUser;
@@ -95,5 +81,4 @@ export const authOptions = {
 };
 
 const handler = NextAuth(authOptions);
-
 export { handler as GET, handler as POST };
