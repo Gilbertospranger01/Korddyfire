@@ -62,14 +62,22 @@ const handleSignup = useCallback(
       const response = await api.post("/auth/signup", formData);
       alert(response.data.message || "Cadastro realizado com sucesso!");
       router.push("/signin");
-    } catch (error) {
-      const errorMessage =
-        isAxiosError(error) && error.response?.data?.message
-          ? error.response.data.message
-          : "Erro desconhecido";
-      console.error("Erro de signup:", errorMessage);
-      alert(`Erro de Signup: ${errorMessage}`);
-    } finally {
+    } } catch (error) {
+  if (isAxiosError(error)) {
+    console.error("Resposta de erro completa:", error.response?.data);
+    console.error("Status do erro:", error.response?.status);
+    alert(
+      `Erro de Signup: ${
+        error.response?.data?.message ||
+        JSON.stringify(error.response?.data) ||
+        "Erro desconhecido"
+      }`
+    );
+  } else {
+    console.error("Erro inesperado:", error);
+    alert("Erro inesperado no signup.");
+  }
+} finally {
       setLoading(false);
     }
   },
