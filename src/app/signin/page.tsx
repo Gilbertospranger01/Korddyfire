@@ -179,14 +179,14 @@ export default function Signin() {
               </button>
 
               <button
-                onclick=(() => signIn("github", { callbackUrl: "/home" })}
-                className="text-white"
-                aria-label="Entrar com GitHub"
-                type="button"
-                title="Entrar com GitHub"
-              >
-                <FaGithub size={30} />
-              </button>
+  onClick={() => signIn("github", { callbackUrl: "/home" })}
+  className="text-white"
+  aria-label="Entrar com GitHub"
+  type="button"
+  title="Entrar com GitHub"
+>
+  <FaGithub size={30} />
+</button>
 
               <button
                 onClick={() => handleOAuthLogin("imlinkedy")}
