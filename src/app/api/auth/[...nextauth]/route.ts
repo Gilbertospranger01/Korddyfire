@@ -4,10 +4,10 @@ import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
-import type { AuthOptions } from "@auth/core/types";
+import type { AuthOptions } from "next-auth";
 import type { User } from "@types/types";
 
-// JWT token extendido
+// Extensão do JWT
 interface JWTToken {
   id?: string;
   email?: string;
@@ -16,7 +16,7 @@ interface JWTToken {
   [key: string]: unknown;
 }
 
-// Session extendida
+// Extensão da Session
 interface SessionWithUser {
   user: JWTToken;
   expires: string;
@@ -59,18 +59,11 @@ const authOptions: AuthOptions = {
       },
     }),
   ],
-  session: {
-    strategy: "jwt",
-  },
-  jwt: {
-    secret: process.env.JWT_SECRET!,
-  },
+  session: { strategy: "jwt" },
+  jwt: { secret: process.env.JWT_SECRET! },
   callbacks: {
     async jwt({ token, user }: { token: JWTToken; user?: User }): Promise<JWTToken> {
-      if (user) {
-        return { ...token, ...user };
-      }
-      return token;
+      return user ? { ...token, ...user } : token;
     },
     async session({ session, token }: { session: SessionWithUser; token: JWTToken }): Promise<SessionWithUser> {
       session.user = { ...token };
