@@ -4,7 +4,7 @@ import FacebookProvider from "next-auth/providers/facebook";
 import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 import type { AuthOptions } from "next-auth";
-import type { Profile } from "@/utils/types";
+import type { User } from "@/utils/types"; // <-- substituído Profile por User
 
 // Extensão do JWT para incluir campos opcionais
 export interface JWTToken {
@@ -52,7 +52,7 @@ const authOptions: AuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email) return null;
 
-        const user: Profile = {
+        const user: User = {
           id: "custom-id",
           email: credentials.email,
         };
@@ -66,7 +66,7 @@ const authOptions: AuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        const u = user as Profile;
+        const u = user as User;
         token = { ...token, ...u };
       }
       return token as JWTToken;
