@@ -82,7 +82,7 @@ export const authOptions: AuthOptions = {
   },
   callbacks: {
     // JWT callback: mescla user no token, campos opcionais
-    async jwt({ token, user, account, profile }) {
+    async jwt({ token, user }) {
       if (user) {
         const u = user as Profile;
         token = { ...token, ...u };
