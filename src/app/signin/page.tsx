@@ -36,7 +36,7 @@ export default function Signin() {
     setError(null);
     setLoading(true);
     try {
-      await api.post("/signin", formData);
+      await api.post("/auth/signin/", formData);
       router.push("/home");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao fazer login.");
