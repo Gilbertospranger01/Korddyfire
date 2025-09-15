@@ -1,11 +1,11 @@
 // app/api/auth/[...nextauth]/route.ts
-import NextAuth, { JWT, Session } from "next-auth";
+import NextAuth, { Session } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-// Tipagem do usuário (retorno de qualquer provider ou backend)
+// Tipagem do usuário retornado pelo backend
 export type User = {
   id: string;
   name?: string;
@@ -31,8 +31,8 @@ export type User = {
   [key: string]: unknown;
 };
 
-// Custom token type
-interface MyToken extends JWT {
+// Token customizado
+interface MyToken {
   id?: string;
   name?: string;
   email?: string;
@@ -40,7 +40,7 @@ interface MyToken extends JWT {
   [key: string]: unknown;
 }
 
-// Custom session type
+// Session customizada
 interface MySession extends Session {
   user: MyToken;
 }
@@ -91,7 +91,6 @@ const options = {
       if (user) token = { ...token, ...user };
       return token;
     },
-
     async session({ session, token }: { session: MySession; token: MyToken }) {
       session.user = { ...token };
       return session;
@@ -99,6 +98,6 @@ const options = {
   },
 };
 
-// Exportando apenas o handler para Next.js App Router
+// Exportando apenas o handler
 const handler = NextAuth(options);
 export { handler as GET, handler as POST };
