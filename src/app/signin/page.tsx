@@ -179,7 +179,7 @@ export default function Signin() {
               </button>
 
               <button
-  onClick={() => signIn("github", { callbackUrl: "/home" })}
+  onClick={() => signIn("github", { callbackUrl: "https://korddyfire.vercel.app/api/auth/callback/github" })}
   className="text-white"
   aria-label="Entrar com GitHub"
   type="button"
