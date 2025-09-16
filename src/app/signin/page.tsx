@@ -76,7 +76,7 @@ export default function Signin() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: provider as "google" | "facebook" | "github",
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback`,
+          redirectTo: "https://korddyfire.vercel.app/api/auth/callback",
         },
       });
 
