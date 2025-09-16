@@ -1,71 +1,32 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaGithub, FaLock } from "react-icons/fa";
+import Image from "next/image";
+import axios from "axios";
+
+import Input from "@/components/ui/input";
 import BackgroundImage from "@/components/backgroundimage";
 import Loadingconnection from "@/loadingpages/loadingconnection";
-import Input from "@/components/ui/input";
-import Image from "next/image";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/client"; // Supabase client (browser-safe)
 
 type FormData = {
   email: string;
   password: string;
 };
 
+const supabase = createClient();
+
 export default function Signin() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({ email: "", password: "" });
-  const [isOnline, setIsOnline] = useState(true);
   const [loading, setLoading] = useState(false);
-  const supabase = createClient();
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signin/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      router.push("/home");
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro ao fazer login.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOAuthLogin = async (
-    provider: "google" | "facebook" | "github" | "imlinkedy"
-  ) => {
-    setError(null);
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback`,
-        },
-      });
-      if (error) throw new Error(error.message);
-      if (data?.url) window.location.href = data.url;
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido");
-      setLoading(false);
-    }
-  };
+  const [error, setError] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
     const updateOnlineStatus = () => setIsOnline(navigator.onLine);
@@ -77,6 +38,55 @@ export default function Signin() {
       window.removeEventListener("offline", updateOnlineStatus);
     };
   }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Login via form (email/password) -> backend
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signin`, formData);
+      router.push("/home");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao fazer login.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // OAuth login
+  const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "imlinkedy") => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (provider === "imlinkedy") {
+        // Custom OAuth -> redireciona para backend
+        window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/imlinkedy`;
+        return;
+      }
+
+      // Providers oficiais via Supabase
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: provider as "google" | "facebook" | "github",
+        options: {
+          redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback`,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.url) window.location.href = data.url;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
+      setLoading(false);
+    }
+  };
 
   if (!isOnline) return <Loadingconnection />;
 
@@ -95,6 +105,7 @@ export default function Signin() {
         >
           <h2 className="text-2xl font-bold mb-6 text-center text-white">Sign In</h2>
 
+          {/* Form login */}
           <form className="w-full" onSubmit={handleSignIn}>
             <Input
               type="email"
@@ -116,18 +127,13 @@ export default function Signin() {
               className="w-full mb-3"
               required
             />
-
             <div className="flex flex-col space-y-4 mt-4">
               <p className="text-white text-xs text-right">
                 Esqueceu a senha?{" "}
-                <Link
-                  href="/user/recover_password"
-                  className="text-blue-400 hover:text-blue-600 ml-2"
-                >
+                <Link href="/user/recover_password" className="text-blue-400 hover:text-blue-600 ml-2">
                   Recuperar
                 </Link>
               </p>
-
               <button
                 type="submit"
                 disabled={loading}
@@ -140,14 +146,19 @@ export default function Signin() {
           </form>
 
           {error && (
-            <p role="alert" className="text-red-500 text-sm mt-2">{error}</p>
+            <p role="alert" className="text-red-500 text-sm mt-2">
+              {error}
+            </p>
           )}
 
           <p className="text-center text-gray-400 text-sm mt-6">
             Não tem uma conta?{" "}
-            <Link href="/signup" className="text-blue-400 hover:text-blue-600">Criar conta</Link>
+            <Link href="/signup" className="text-blue-400 hover:text-blue-600">
+              Criar conta
+            </Link>
           </p>
 
+          {/* OAuth buttons */}
           <div className="flex flex-col items-center mt-4 mb-10">
             <p className="text-gray-600 text-sm mb-2">Ou entre com</p>
             <div className="flex space-x-6">
@@ -160,7 +171,6 @@ export default function Signin() {
               >
                 <FcGoogle size={30} />
               </button>
-
               <button
                 onClick={() => handleOAuthLogin("facebook")}
                 className="text-blue-600"
@@ -170,7 +180,6 @@ export default function Signin() {
               >
                 <FaFacebook size={30} />
               </button>
-
               <button
                 onClick={() => handleOAuthLogin("github")}
                 className="text-white"
@@ -180,7 +189,6 @@ export default function Signin() {
               >
                 <FaGithub size={30} />
               </button>
-
               <button
                 onClick={() => handleOAuthLogin("imlinkedy")}
                 className="relative w-7 h-7 rounded-full overflow-hidden flex items-center justify-center bg-gray-800 hover:bg-gray-700"
