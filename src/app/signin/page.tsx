@@ -80,7 +80,7 @@ export default function Signin() {
       const { data, error } = await supabase.auth.signInWithOAuth({        
         provider,        
         options: {        
-          redirectTo: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/auth/callback`,        
+          redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback`,        
         },        
       });        
         
