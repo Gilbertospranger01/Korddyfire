@@ -71,7 +71,6 @@ export default function Signin() {
     try {        
       if (provider === "imlinkedy") {        
         // Custom OAuth -> backend direto        
-        alert("Redirecionando para Imlinkedy...");        
         window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/${provider}`;        
         return;        
       }        
@@ -87,7 +86,6 @@ export default function Signin() {
       if (error) throw error;        
         
       if (data?.url) {        
-        alert(`Redirecionando para ${provider}...`);        
         window.location.href = data.url;        
       }        
     } catch (err: unknown) {        
