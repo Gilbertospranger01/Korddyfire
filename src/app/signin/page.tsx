@@ -12,7 +12,7 @@ import axios from "axios";
 import Input from "@/components/ui/input";
 import BackgroundImage from "@/components/backgroundimage";
 import Loadingconnection from "@/loadingpages/loadingconnection";
-import { createClient } from "@/utils/supabase/client"; // Supabase client (browser-safe)
+import { createClient } from "@/utils/supabase/client";
 
 type FormData = {
   email: string;
@@ -44,14 +44,18 @@ export default function Signin() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Login via form (email/password) -> backend
+  // Email/password login
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signin`, formData);
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signin`,
+        formData,
+        { withCredentials: true }
+      );
       router.push("/home");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao fazer login.");
@@ -61,24 +65,28 @@ export default function Signin() {
   };
 
   // OAuth login
-  const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "imlinkedy") => {
+  const handleOAuthLogin = async (
+    provider: "google" | "facebook" | "github" | "imlinkedy"
+  ) => {
     setLoading(true);
     setError(null);
 
     try {
       if (provider === "imlinkedy") {
-        // Custom OAuth -> redireciona para backend
-        window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/imlinkedy`;
+        console.log("Redirecting to custom provider:", provider);
+        window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/${provider}`;
         return;
       }
 
-      // Providers oficiais via Supabase
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: provider as "google" | "facebook" | "github",
         options: {
-          redirectTo: "https://korddyfire.vercel.app/auth/callback",
+          redirectTo: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/auth/callback`,
         },
       });
+
+      console.log("Supabase OAuth response:", data);
+      if (data?.url) console.log("Redirect URL:", data.url);
 
       if (error) throw error;
       if (data?.url) window.location.href = data.url;
@@ -105,7 +113,7 @@ export default function Signin() {
         >
           <h2 className="text-2xl font-bold mb-6 text-center text-white">Sign In</h2>
 
-          {/* Form login */}
+          {/* Email/password */}
           <form className="w-full" onSubmit={handleSignIn}>
             <Input
               type="email"
@@ -130,7 +138,10 @@ export default function Signin() {
             <div className="flex flex-col space-y-4 mt-4">
               <p className="text-white text-xs text-right">
                 Esqueceu a senha?{" "}
-                <Link href="/user/recover_password" className="text-blue-400 hover:text-blue-600 ml-2">
+                <Link
+                  href="/user/recover_password"
+                  className="text-blue-400 hover:text-blue-600 ml-2"
+                >
                   Recuperar
                 </Link>
               </p>
@@ -158,14 +169,13 @@ export default function Signin() {
             </Link>
           </p>
 
-          {/* OAuth buttons */}
+          {/* OAuth */}
           <div className="flex flex-col items-center mt-4 mb-10">
             <p className="text-gray-600 text-sm mb-2">Ou entre com</p>
             <div className="flex space-x-6">
               <button
                 onClick={() => handleOAuthLogin("google")}
                 className="text-white"
-                aria-label="Entrar com Google"
                 type="button"
                 title="Entrar com Google"
               >
@@ -174,7 +184,6 @@ export default function Signin() {
               <button
                 onClick={() => handleOAuthLogin("facebook")}
                 className="text-blue-600"
-                aria-label="Entrar com Facebook"
                 type="button"
                 title="Entrar com Facebook"
               >
@@ -183,7 +192,6 @@ export default function Signin() {
               <button
                 onClick={() => handleOAuthLogin("github")}
                 className="text-white"
-                aria-label="Entrar com GitHub"
                 type="button"
                 title="Entrar com GitHub"
               >
@@ -192,7 +200,6 @@ export default function Signin() {
               <button
                 onClick={() => handleOAuthLogin("imlinkedy")}
                 className="relative w-7 h-7 rounded-full overflow-hidden flex items-center justify-center bg-gray-800 hover:bg-gray-700"
-                aria-label="Entrar com Imlinkedy"
                 type="button"
                 title="Entrar com Imlinkedy"
               >
