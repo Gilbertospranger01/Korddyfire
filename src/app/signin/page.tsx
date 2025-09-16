@@ -173,11 +173,12 @@ const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "im
     if (!sessionData.session?.user?.id) throw new Error("Usuário não autenticado");
 
     // GET na tabela auth.users
-    const { data: userData, error: userError } = await supabase
-      .from<SupabaseUser>("auth.users")
-      .select("*")
-      .eq("id", sessionData.session.user.id)
-      .single();
+
+     const { data: userData, error: userError } = await supabase
+  .from<SupabaseUser, SupabaseUser>("auth.users")
+  .select("*")
+  .eq("id", sessionData.session.user.id)
+  .single();
 
     if (userError) throw userError;
 
