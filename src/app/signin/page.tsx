@@ -160,7 +160,7 @@ const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "im
     }
 
     // Supabase OAuth
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: "/home" }, // mantemos o redirect
     });
