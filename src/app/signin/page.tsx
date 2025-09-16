@@ -149,47 +149,56 @@ export default function Signin() {
 
   // OAuth login -> backend
   const handleOAuthLogin = async (
-    provider: "google" | "facebook" | "github" | "imlinkedy"
-  ) => {
-    setLoading(true);
-    setError(null);
+  provider: "google" | "facebook" | "github" | "imlinkedy"
+) => {
+  setLoading(true);
+  setError(null);
 
-    try {
-      if (provider === "imlinkedy") {
-        window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/${provider}`;
-        return;
-      }
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: { redirectTo: "/home" },
-      });
-
-      if (error) throw error;
-
-      // --- Pegando a sessão atual ---
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) throw sessionError;
-      if (!sessionData.session?.user?.id) throw new Error("Usuário não autenticado");
-
-      // --- GET auth.users usando tipagem segura ---
-      const { data: userData, error: userError } = await supabase
-        .from<Record<string, unknown>>("auth.users")
-        .select("*")
-        .eq("id", sessionData.session.user.id)
-        .single();
-
-      if (userError || !userData) throw userError || new Error("Usuário não encontrado");
-
-      // Mapear e enviar para backend
-      const mappedUser = mapSupabaseUser(userData as SupabaseUser);
-      await api.post("/signin-providers", { provider, user: mappedUser, session: sessionData.session });
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido");
-    } finally {
-      setLoading(false);
+  try {
+    // Redireciona direto para backend custom OAuth (Imlinkedy)
+    if (provider === "imlinkedy") {
+      window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/${provider}`;
+      return;
     }
-  };
+
+    // Login OAuth via Supabase
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: "/home" },
+    });
+
+    if (oauthError) throw oauthError;
+
+    // --- Pegando a sessão atual do Supabase ---
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+    const session = sessionData.session;
+    if (!session?.user?.id) throw new Error("Usuário não autenticado");
+
+    // --- GET auth.users com tipagem segura ---
+    const { data: userData, error: userError } = await supabase
+      .from<SupabaseUser>("auth.users")
+      .select("*")
+      .eq("id", session.user.id)
+      .single();
+
+    if (userError || !userData) throw userError || new Error("Usuário não encontrado");
+
+    // Mapear usuário para formato do backend
+    const mappedUser = mapSupabaseUser(userData);
+
+    // Enviar dados do usuário e sessão para o backend
+    await api.post("/signin-providers", {
+      provider,
+      user: mappedUser,
+      session,
+    });
+  } catch (err: unknown) {
+    setError(err instanceof Error ? err.message : "Erro desconhecido");
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (!isOnline) return <Loadingconnection />;
 
