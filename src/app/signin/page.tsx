@@ -12,7 +12,7 @@ import Input from "@/components/ui/input";
 import BackgroundImage from "@/components/backgroundimage";
 import Loadingconnection from "@/loadingpages/loadingconnection";
 import { createClient } from "@/utils/supabase/client";
-import api from "@/utils/api";
+import api from "@/utils/api"; // Axios configurado com backend
 
 type FormData = { email: string; password: string };
 
@@ -47,12 +47,11 @@ export default function Signin() {
     setError(null);
 
     try {
-      const res = await api.post("/users/signin", formData);
+      const res = await api.post("/auth/signin", formData, { withCredentials: true });
       alert("Login realizado com sucesso. Redirecionando...");
-      console.log("Login success:", res.data);
       router.push("/home");
     } catch (err: any) {
-      setError(err.error || err.message || "Erro ao fazer login.");
+      setError(err?.error || err?.message || "Erro ao fazer login.");
     } finally {
       setLoading(false);
     }
@@ -69,19 +68,19 @@ export default function Signin() {
         return;
       }
 
+      // Supabase OAuth apenas para Google, Facebook, GitHub
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: { redirectTo: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/auth/callback` },
       });
 
       if (error) throw error;
-
       if (data?.url) {
         alert(`Redirecionando para ${provider}...`);
         window.location.href = data.url;
       }
     } catch (err: any) {
-      setError(err.message || "Erro desconhecido");
+      setError(err?.message || "Erro desconhecido");
       setLoading(false);
     }
   };
@@ -142,11 +141,7 @@ export default function Signin() {
             </div>
           </form>
 
-          {error && (
-            <p role="alert" className="text-red-500 text-sm mt-2">
-              {error}
-            </p>
-          )}
+          {error && <p role="alert" className="text-red-500 text-sm mt-2">{error}</p>}
 
           <p className="text-center text-gray-400 text-sm mt-6">
             Não tem uma conta?{" "}
