@@ -148,52 +148,48 @@ export default function Signin() {
   }
 
   // OAuth login -> backend
-const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "imlinkedy") => {
-  setLoading(true);
-  setError(null);
+  const handleOAuthLogin = async (
+    provider: "google" | "facebook" | "github" | "imlinkedy"
+  ) => {
+    setLoading(true);
+    setError(null);
 
-  try {
-    if (provider === "imlinkedy") {
-      // Redireciona para backend custom OAuth
-      window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/${provider}`;
-      return;
+    try {
+      if (provider === "imlinkedy") {
+        window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/${provider}`;
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: "/home" },
+      });
+
+      if (error) throw error;
+
+      // --- Pegando a sessão atual ---
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!sessionData.session?.user?.id) throw new Error("Usuário não autenticado");
+
+      // --- GET auth.users usando tipagem segura ---
+      const { data: userData, error: userError } = await supabase
+        .from<Record<string, unknown>>("auth.users")
+        .select("*")
+        .eq("id", sessionData.session.user.id)
+        .single();
+
+      if (userError || !userData) throw userError || new Error("Usuário não encontrado");
+
+      // Mapear e enviar para backend
+      const mappedUser = mapSupabaseUser(userData as SupabaseUser);
+      await api.post("/signin-providers", { provider, user: mappedUser, session: sessionData.session });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
+    } finally {
+      setLoading(false);
     }
-
-    // Supabase OAuth
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: "/home" }, // mantemos o redirect
-    });
-
-    if (error) throw error;
-
-    // --- Aqui pegamos a sessão atual do Supabase ---
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) throw sessionError;
-    if (!sessionData.session?.user?.id) throw new Error("Usuário não autenticado");
-
-    // GET na tabela auth.users
-
-     const { data: userData, error: userError } = await supabase
-  .from<SupabaseUser, SupabaseUser>("auth.users")
-  .select("*")
-  .eq("id", sessionData.session.user.id)
-  .single();
-
-    if (userError) throw userError;
-
-    // Mapear e enviar para o backend
-    const mappedUser = mapSupabaseUser(userData);
-    await api.post("/signin-providers", {
-      provider,
-      user: mappedUser,
-      session: sessionData.session,
-    });
-  } catch (err: unknown) {
-    setError(err instanceof Error ? err.message : "Erro desconhecido");
-    setLoading(false);
-  }
-};
+  };
 
   if (!isOnline) return <Loadingconnection />;
 
@@ -236,10 +232,7 @@ const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "im
             <div className="flex flex-col space-y-4 mt-4">
               <p className="text-white text-xs text-right">
                 Esqueceu a senha?{" "}
-                <Link
-                  href="/user/recover_password"
-                  className="text-blue-400 hover:text-blue-600 ml-2"
-                >
+                <Link href="/user/recover_password" className="text-blue-400 hover:text-blue-600 ml-2">
                   Recuperar
                 </Link>
               </p>
@@ -270,28 +263,13 @@ const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "im
           <div className="flex flex-col items-center mt-4 mb-10">
             <p className="text-gray-600 text-sm mb-2">Ou entre com</p>
             <div className="flex space-x-6">
-              <button
-                onClick={() => handleOAuthLogin("google")}
-                className="text-white"
-                type="button"
-                title="Entrar com Google"
-              >
+              <button onClick={() => handleOAuthLogin("google")} className="text-white" type="button" title="Entrar com Google">
                 <FcGoogle size={30} />
               </button>
-              <button
-                onClick={() => handleOAuthLogin("facebook")}
-                className="text-blue-600"
-                type="button"
-                title="Entrar com Facebook"
-              >
+              <button onClick={() => handleOAuthLogin("facebook")} className="text-blue-600" type="button" title="Entrar com Facebook">
                 <FaFacebook size={30} />
               </button>
-              <button
-                onClick={() => handleOAuthLogin("github")}
-                className="text-white"
-                type="button"
-                title="Entrar com GitHub"
-              >
+              <button onClick={() => handleOAuthLogin("github")} className="text-white" type="button" title="Entrar com GitHub">
                 <FaGithub size={30} />
               </button>
               <button
@@ -300,12 +278,7 @@ const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "im
                 type="button"
                 title="Entrar com Imlinkedy"
               >
-                <Image
-                  src="https://imlinked.vercel.app/favicon.png"
-                  alt="Imlinkedy"
-                  fill
-                  className="object-cover"
-                />
+                <Image src="https://imlinked.vercel.app/favicon.png" alt="Imlinkedy" fill className="object-cover" />
               </button>
             </div>
           </div>
