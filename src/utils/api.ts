@@ -8,15 +8,21 @@ const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BACKEND_URL + "/api/v1/",
   withCredentials: true, // cookies cross-domain
   headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
+    Accept: "application/json", // mantém só Accept
   },
 });
 
+// Interceptor para remover Content-Type apenas quando for upload
 api.interceptors.request.use((config) => {
-  // Remover Content-Type para upload multipart/form-data
-  if (config.headers && config.headers["Content-Type"] === "multipart/form-data") {
-    delete config.headers["Content-Type"];
+  // Detecta se é um FormData
+  if (config.data instanceof FormData) {
+    // Deixa o browser definir o Content-Type correto com boundary
+    if (config.headers) {
+      delete config.headers["Content-Type"];
+    }
+  } else {
+    // Para JSON, adiciona
+    if (config.headers) config.headers["Content-Type"] = "application/json";
   }
   return config;
 });
