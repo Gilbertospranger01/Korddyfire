@@ -148,7 +148,6 @@ export default function Signin() {
   }
 
   // OAuth login -> backend
-  // OAuth login -> backend
 const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "imlinkedy") => {
   setLoading(true);
   setError(null);
@@ -163,34 +162,32 @@ const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "im
     // Supabase OAuth
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: "/home" },
+      options: { redirectTo: "/home" }, // mantemos o redirect
     });
 
     if (error) throw error;
 
-    // Aqui fazemos o GET na tabela auth.users usando a session do Supabase
-    if (data?.session) {
-      const session = data.session;
-      const { data: userData, error: userError } = await supabase
-        .from<SupabaseUser>("auth.users")
-        .select("*")
-        .eq("id", session.user?.id)
-        .single();
+    // --- Aqui pegamos a sessão atual do Supabase ---
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+    if (!sessionData.session?.user?.id) throw new Error("Usuário não autenticado");
 
-      if (userError) throw userError;
+    // GET na tabela auth.users
+    const { data: userData, error: userError } = await supabase
+      .from<SupabaseUser>("auth.users")
+      .select("*")
+      .eq("id", sessionData.session.user.id)
+      .single();
 
-      // Mapeia e envia para o backend
-      const mappedUser = mapSupabaseUser(userData);
-      await api.post("/signin-providers", {
-        provider,
-        user: mappedUser,
-        session,
-      });
-    }
+    if (userError) throw userError;
 
-    if (data?.url) {
-      window.location.href = data.url;
-    }
+    // Mapear e enviar para o backend
+    const mappedUser = mapSupabaseUser(userData);
+    await api.post("/signin-providers", {
+      provider,
+      user: mappedUser,
+      session: sessionData.session,
+    });
   } catch (err: unknown) {
     setError(err instanceof Error ? err.message : "Erro desconhecido");
     setLoading(false);
