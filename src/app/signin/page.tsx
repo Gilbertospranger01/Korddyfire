@@ -44,18 +44,17 @@ export default function Signin() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Email/password login
+  // Email/password login -> backend
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signin`,
-        formData,
-        { withCredentials: true }
-      );
+      await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signin`, formData, {
+        withCredentials: true,
+      });
+      alert("Login realizado com sucesso. Redirecionando...");
       router.push("/home");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao fazer login.");
@@ -64,32 +63,33 @@ export default function Signin() {
     }
   };
 
-  // OAuth login
-  const handleOAuthLogin = async (
-    provider: "google" | "facebook" | "github" | "imlinkedy"
-  ) => {
+  // OAuth login -> backend
+  const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "imlinkedy") => {
     setLoading(true);
     setError(null);
 
     try {
       if (provider === "imlinkedy") {
-        console.log("Redirecting to custom provider:", provider);
+        // Custom OAuth -> backend direto
+        alert("Redirecionando para Imlinkedy...");
         window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/${provider}`;
         return;
       }
 
+      // Supabase OAuth para Google, Facebook e GitHub
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: provider as "google" | "facebook" | "github",
+        provider,
         options: {
           redirectTo: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/auth/callback`,
         },
       });
 
-      console.log("Supabase OAuth response:", data);
-      if (data?.url) console.log("Redirect URL:", data.url);
-
       if (error) throw error;
-      if (data?.url) window.location.href = data.url;
+
+      if (data?.url) {
+        alert(`Redirecionando para ${provider}...`);
+        window.location.href = data.url;
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro desconhecido");
       setLoading(false);
@@ -113,7 +113,7 @@ export default function Signin() {
         >
           <h2 className="text-2xl font-bold mb-6 text-center text-white">Sign In</h2>
 
-          {/* Email/password */}
+          {/* Form login */}
           <form className="w-full" onSubmit={handleSignIn}>
             <Input
               type="email"
@@ -169,7 +169,7 @@ export default function Signin() {
             </Link>
           </p>
 
-          {/* OAuth */}
+          {/* OAuth buttons */}
           <div className="flex flex-col items-center mt-4 mb-10">
             <p className="text-gray-600 text-sm mb-2">Ou entre com</p>
             <div className="flex space-x-6">
