@@ -148,43 +148,54 @@ export default function Signin() {
   }
 
   // OAuth login -> backend
-  const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "imlinkedy") => {
-    setLoading(true);
-    setError(null);
+  // OAuth login -> backend
+const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "imlinkedy") => {
+  setLoading(true);
+  setError(null);
 
-    try {
-      if (provider === "imlinkedy") {
-        // Redireciona para backend custom OAuth
-        window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/${provider}`;
-        return;
-      }
-
-      // Supabase OAuth
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: { redirectTo: "/home" },
-      });
-
-      if (error) throw error;
-
-      // envia dados para backend
-      if (data?.user) {
-        const mappedUser = mapSupabaseUser(data.user);
-        await api.post("/signin-providers", {
-          provider,
-          user: mappedUser,
-          session: data.session,
-        });
-      }
-
-      if (data?.url) {
-        window.location.href = data.url;
-      }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido");
-      setLoading(false);
+  try {
+    if (provider === "imlinkedy") {
+      // Redireciona para backend custom OAuth
+      window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/${provider}`;
+      return;
     }
-  };
+
+    // Supabase OAuth
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: "/home" },
+    });
+
+    if (error) throw error;
+
+    // Aqui fazemos o GET na tabela auth.users usando a session do Supabase
+    if (data?.session) {
+      const session = data.session;
+      const { data: userData, error: userError } = await supabase
+        .from<SupabaseUser>("auth.users")
+        .select("*")
+        .eq("id", session.user?.id)
+        .single();
+
+      if (userError) throw userError;
+
+      // Mapeia e envia para o backend
+      const mappedUser = mapSupabaseUser(userData);
+      await api.post("/signin-providers", {
+        provider,
+        user: mappedUser,
+        session,
+      });
+    }
+
+    if (data?.url) {
+      window.location.href = data.url;
+    }
+  } catch (err: unknown) {
+    setError(err instanceof Error ? err.message : "Erro desconhecido");
+    setLoading(false);
+  }
+};
 
   if (!isOnline) return <Loadingconnection />;
 
