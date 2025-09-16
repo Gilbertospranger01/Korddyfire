@@ -8,13 +8,11 @@ export async function GET(request: Request) {
   if (!next.startsWith('/')) next = '/'
 
   if (!code) {
-    // código não recebido
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/auth/auth-code-error`)
   }
 
   const supabase = createClient()
 
-  // troca código por sessão Supabase
   const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(code)
   if (error || !sessionData?.user) {
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/auth/auth-code-error`)
@@ -22,7 +20,7 @@ export async function GET(request: Request) {
 
   const user = sessionData.user
 
-  // envia para seu backend
+  // POST para o backend
   try {
     await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/signin-providers`, {
       method: 'POST',
@@ -33,6 +31,5 @@ export async function GET(request: Request) {
     console.error('Erro ao enviar dados para backend:', err)
   }
 
-  // redireciona para a página final
   return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}${next}`)
 }
