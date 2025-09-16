@@ -1,18 +1,15 @@
 "use client";
-
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn, getSession } from "next-auth/react";
-import type { Session } from "next-auth";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaGithub, FaLock } from "react-icons/fa";
 import BackgroundImage from "@/components/backgroundimage";
 import Loadingconnection from "@/loadingpages/loadingconnection";
 import Input from "@/components/ui/input";
 import Image from "next/image";
-import axios from "axios";
+import { createClient } from "@/utils/supabase/server";
 
 type FormData = {
   email: string;
@@ -25,6 +22,7 @@ export default function Signin() {
   const [formData, setFormData] = useState<FormData>({ email: "", password: "" });
   const [isOnline, setIsOnline] = useState(true);
   const [loading, setLoading] = useState(false);
+  const supabase = createClient();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -36,7 +34,11 @@ export default function Signin() {
     setError(null);
     setLoading(true);
     try {
-      await axios.post("/auth/signin/", formData);
+      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signin/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
       router.push("/home");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao fazer login.");
@@ -51,21 +53,16 @@ export default function Signin() {
     setError(null);
     setLoading(true);
     try {
-      // Faz login via NextAuth sem redirecionar
-      const result = await signIn(provider, { redirect: false });
-      if (!result?.ok) throw new Error("Falha no login via provedor.");
-
-      // Recupera sessão completa
-      const session: Session | null = await getSession();
-      if (!session?.user) throw new Error("Dados do provedor não encontrados.");
-
-      // Envia TUDO para o backend
-      await axios.post("/signin-providers", session.user);
-
-      router.push("/home");
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback`,
+        },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.url) window.location.href = data.url;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro desconhecido");
-    } finally {
       setLoading(false);
     }
   };
@@ -143,16 +140,12 @@ export default function Signin() {
           </form>
 
           {error && (
-            <p role="alert" className="text-red-500 text-sm mt-2">
-              {error}
-            </p>
+            <p role="alert" className="text-red-500 text-sm mt-2">{error}</p>
           )}
 
           <p className="text-center text-gray-400 text-sm mt-6">
             Não tem uma conta?{" "}
-            <Link href="/signup" className="text-blue-400 hover:text-blue-600">
-              Criar conta
-            </Link>
+            <Link href="/signup" className="text-blue-400 hover:text-blue-600">Criar conta</Link>
           </p>
 
           <div className="flex flex-col items-center mt-4 mb-10">
@@ -179,14 +172,14 @@ export default function Signin() {
               </button>
 
               <button
-  onClick={() => signIn("github", { callbackUrl: "https://korddyfire.vercel.app/api/auth/callback/github" })}
-  className="text-white"
-  aria-label="Entrar com GitHub"
-  type="button"
-  title="Entrar com GitHub"
->
-  <FaGithub size={30} />
-</button>
+                onClick={() => handleOAuthLogin("github")}
+                className="text-white"
+                aria-label="Entrar com GitHub"
+                type="button"
+                title="Entrar com GitHub"
+              >
+                <FaGithub size={30} />
+              </button>
 
               <button
                 onClick={() => handleOAuthLogin("imlinkedy")}
