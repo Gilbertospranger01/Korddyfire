@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { FcGoogle } from "react-icons/fc";        
 import { FaFacebook, FaGithub, FaLock } from "react-icons/fa";        
 import Image from "next/image";        
-import axios from "axios";        
+import api from "@/utils/api";      
         
 import Input from "@/components/ui/input";        
 import BackgroundImage from "@/components/backgroundimage";        
@@ -51,9 +51,7 @@ export default function Signin() {
     setError(null);        
         
     try {        
-      await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signin`, formData, {        
-        withCredentials: true,        
-      });        
+      await api.post("/signin", formData);        
       alert("Login realizado com sucesso. Redirecionando...");        
       router.push("/home");        
     } catch (err: unknown) {        
@@ -79,7 +77,7 @@ export default function Signin() {
       const { data, error } = await supabase.auth.signInWithOAuth({        
         provider,        
         options: {        
-          redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/home`,        
+          redirectTo: "/home",        
         },        
       });        
         
