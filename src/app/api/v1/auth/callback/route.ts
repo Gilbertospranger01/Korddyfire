@@ -1,35 +1,34 @@
 import { NextResponse } from 'next/server'
+// The client you created from the Server-Side Auth instructions
 import { createClient } from '@/utils/supabase/client'
 
 export async function GET(request: Request) {
-  const url = new URL(request.url)
-  const code = url.searchParams.get('code')
-  let next = url.searchParams.get('next') ?? '/'
-  if (!next.startsWith('/')) next = '/'
-
-  if (!code) {
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/auth/auth-code-error`)
+  const { searchParams, origin } = new URL(request.url)
+  const code = searchParams.get('code')
+  // if "next" is in param, use it as the redirect URL
+  let next = searchParams.get('next') ?? '/'
+  if (!next.startsWith('/')) {
+    // if "next" is not a relative URL, use the default
+    next = '/'
   }
 
-  const supabase = createClient()
-
-  const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(code)
-  if (error || !sessionData?.user) {
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/auth/auth-code-error`)
+  if (code) {
+    const supabase = await createClient()
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error) {
+      const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer
+      const isLocalEnv = process.env.NODE_ENV === 'development'
+      if (isLocalEnv) {
+        // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
+        return NextResponse.redirect(`${origin}${next}`)
+      } else if (forwardedHost) {
+        return NextResponse.redirect(`https://${forwardedHost}${next}`)
+      } else {
+        return NextResponse.redirect(`${origin}${next}`)
+      }
+    }
   }
 
-  const user = sessionData.user
-
-  // POST para o backend
-  try {
-    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/signin-providers`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(user),
-    })
-  } catch (err) {
-    console.error('Erro ao enviar dados para backend:', err)
-  }
-
-  return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}${next}`)
+  // return the user to an error page with instructions
+  return NextResponse.redirect(`${origin}/auth/auth-code-error`)
 }
