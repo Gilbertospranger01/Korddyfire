@@ -185,7 +185,7 @@ const Edit_Profile = () => {
       const path = userData.picture_url.split('users/uploads/')[1];
       if (!path) throw new Error("Caminho inválido da imagem.");
 
-      await api.delete("/upload/profile-picture", {
+      await api.delete("users/upload/profile-picture", {
         data: { path },
         withCredentials: true,
       });
