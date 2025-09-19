@@ -12,27 +12,35 @@ import { FaFacebook, FaGithub, FaLock } from "react-icons/fa";
 
 // Utils e serviços
 import api from "@/utils/api";
-import { createClient } from "@/utils/supabase/client";
 
 // Componentes
 import Input from "@/components/ui/input";
 import BackgroundImage from "@/components/backgroundimage";
 import Loadingconnection from "@/loadingpages/loadingconnection";
 
-type FormData = { email: string; password: string };
+// ------------------
+// Types
+// ------------------
+type FormData = {
+  email: string;
+  password: string;
+};
 
-const supabase = createClient();
+type Provider = "google" | "facebook" | "github" | "imlinkedy";
 
 export default function Signin() {
   const router = useRouter();
 
-  const [formData, setFormData] = useState<FormData>({ email: "", password: "" });
+  const [formData, setFormData] = useState<FormData>({
+    email: "",
+    password: "",
+  });
   const [loadingEmail, setLoadingEmail] = useState(false);
-  const [loadingProvider, setLoadingProvider] = useState<null | string>(null);
+  const [loadingProvider, setLoadingProvider] = useState<Provider | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(true);
 
-  // online/offline
+  // Verifica conexão online/offline
   useEffect(() => {
     const updateOnlineStatus = () => setIsOnline(navigator.onLine);
     window.addEventListener("online", updateOnlineStatus);
@@ -44,6 +52,7 @@ export default function Signin() {
     };
   }, []);
 
+  // Atualiza inputs
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
 
@@ -54,91 +63,29 @@ export default function Signin() {
     setLoadingEmail(true);
 
     try {
-      // Ajuste: sua API pode retornar dados específicos; trate conforme necessário
       await api.post("/auth/signin/", formData);
-      // Substitui alert por navegação segura
       router.replace("/home");
-    } catch (err: unknown) {
+    } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao fazer login.");
     } finally {
       setLoadingEmail(false);
     }
   };
 
-  // Helper: normaliza user do session.user para sua API
-  const mapSessionUserToPayload = (user: any) => {
-    if (!user) return null;
-    return {
-      id: user.id ?? null,
-      email: user.email ?? null,
-      phone: user.phone ?? null,
-      provider: user.app_metadata?.provider ?? null,
-      providers: user.app_metadata?.providers ?? [],
-      name:
-        user.user_metadata?.full_name ??
-        user.user_metadata?.name ??
-        user.user_metadata?.preferred_username ??
-        null,
-      username: user.user_metadata?.user_name ?? null,
-      picture_url: user.user_metadata?.avatar_url ?? user.user_metadata?.avatar ?? null,
-      raw: {
-        app_metadata: user.app_metadata ?? null,
-        user_metadata: user.user_metadata ?? null,
-      },
-    };
-  };
-
-  // ---- OAuth ----
-  const handleOAuthLogin = async (
-    provider: "google" | "facebook" | "github" | "imlinkedy"
-  ) => {
+  // ---- OAuth (chama endpoints do backend) ----
+  const handleOAuthLogin = (provider: Provider) => {
     setError(null);
     setLoadingProvider(provider);
 
     try {
-      // provider custom that lives on backend
-      if (provider === "imlinkedy") {
-        const backendAuthUrl =
-          process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") ??
-          process.env.NEXT_PUBLIC_BASE_URL ??
-          "";
-        if (!backendAuthUrl) throw new Error("BACKEND URL não configurado");
-        window.location.href = `${backendAuthUrl}/auth/${provider}`;
-        return; // redirecting away
-      }
+      const backendAuthUrl =
+        process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") ?? "";
+      if (!backendAuthUrl) throw new Error("BACKEND URL não configurado");
 
-      // signInWithOAuth normalmente redireciona; quando não redireciona, tentamos pegar sessão
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          // se quiser definir redirectTo, use: redirectTo: `${location.origin}/home`
-          redirectTo: `${window.location.origin}/home`,
-        },
-      });
-      if (oauthError) throw oauthError;
-
-      // Em muitos fluxos o usuário será redirecionado antes dessa linha. Mas se o SDK retornar sessão imediatamente:
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        // não fatal — pode ser que a página seja redirecionada. Apenas logamos a diferença.
-        console.warn("getSession error (não fatal):", sessionError);
-      }
-
-      const session = sessionData?.session;
-      if (session?.user) {
-        // mapeia e envia para sua API (signin-providers)
-        const mapped = mapSessionUserToPayload(session.user);
-        await api.post("/auth/signin-providers/", { provider, user: mapped, session });
-        // redireciona localmente
-        router.replace("/home");
-      } else {
-        // Normal flow: signInWithOAuth geralmente redireciona; se chegou aqui sem sessão,
-        // o usuário será redirecionado e esse código provavelmente não será executado.
-        // Mantemos UI limpa e aguardamos redirect do provider.
-      }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido no OAuth.");
-    } finally {
+      // Ex: /auth/signin-google/, /auth/signin-facebook/
+      window.location.href = `${backendAuthUrl}/auth/signin-${provider}/`;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao iniciar OAuth.");
       setLoadingProvider(null);
     }
   };
@@ -160,8 +107,11 @@ export default function Signin() {
           transition={{ duration: 0.45 }}
           className="w-full max-w-md flex flex-col justify-center items-center bg-gray-950 p-6 md:p-8 rounded-lg shadow-lg"
         >
-          <h2 className="text-2xl font-bold mb-6 text-center text-white">Sign In</h2>
+          <h2 className="text-2xl font-bold mb-6 text-center text-white">
+            Sign In
+          </h2>
 
+          {/* Form email/senha */}
           <form className="w-full" onSubmit={handleSignIn} noValidate>
             <Input
               type="email"
@@ -212,6 +162,7 @@ export default function Signin() {
             </p>
           )}
 
+          {/* Criar conta */}
           <p className="text-center text-gray-400 text-sm mt-6">
             Não tem uma conta?
             <Link href="/signup" className="text-blue-400 hover:text-blue-600 ml-2">
@@ -219,6 +170,7 @@ export default function Signin() {
             </Link>
           </p>
 
+          {/* OAuth */}
           <div className="flex flex-col items-center mt-4 mb-10">
             <p className="text-gray-600 text-sm mb-2">Ou entre com</p>
             <div className="flex space-x-6">
@@ -239,7 +191,9 @@ export default function Signin() {
                 aria-busy={loadingProvider === "facebook"}
                 className="focus:outline-none"
               >
-                {loadingProvider === "facebook" ? "..." : <FaFacebook size={30} className="text-blue-600" />}
+                {loadingProvider === "facebook" ? "..." : (
+                  <FaFacebook size={30} className="text-blue-600" />
+                )}
               </button>
 
               <button
@@ -249,7 +203,9 @@ export default function Signin() {
                 aria-busy={loadingProvider === "github"}
                 className="focus:outline-none"
               >
-                {loadingProvider === "github" ? "..." : <FaGithub size={30} className="text-white" />}
+                {loadingProvider === "github" ? "..." : (
+                  <FaGithub size={30} className="text-white" />
+                )}
               </button>
 
               <button
