@@ -8,7 +8,7 @@ export function useAuth() {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const { data } = await api.get("/getSession", {
+        const { data } = await api.get("auth/getSession", {
           withCredentials: true,
         });
         setSession({ user: data.user });
@@ -23,7 +23,7 @@ export function useAuth() {
 
   const logout = async () => {
     try {
-      await api.post("/logout", {}, { withCredentials: true });
+      await api.post("auth/logout", {}, { withCredentials: true });
       setSession(null);
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
