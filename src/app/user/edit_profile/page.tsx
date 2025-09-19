@@ -62,7 +62,7 @@ const Edit_Profile = () => {
     setLoading(true);
 
     try {
-      const response = await api.get(`/user`);
+      const response = await api.get(`users/user`);
 
       const formatDate = (dateString: string) => {
         if (!dateString) return '';
@@ -122,7 +122,7 @@ const Edit_Profile = () => {
         ...userData,
         birthdate: formatDateForAPI(userData.birthdate),
       };
-      await api.put(`/edit_profile`, formattedData);
+      await api.put(`users/edit_profile`, formattedData);
       alert("Perfil atualizado com sucesso!");
       router.push('/user/profile');
     } catch (err: unknown) {
