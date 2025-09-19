@@ -160,44 +160,51 @@ export default function Signin() {
   };
 
   // Login OAuth
-  const handleOAuthLogin = async (provider: "google" | "facebook" | "github" | "imlinkedy") => {
-    setLoading(true);
-    setError(null);
+const handleOAuthLogin = async (
+  provider: "google" | "facebook" | "github" | "imlinkedy"
+) => {
+  setLoading(true);
+  setError(null);
 
-    try {
-      if (provider === "imlinkedy") {
-        window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/${provider}`;
-        return;
-      }
-
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: { redirectTo: "/home" },
-      });
-      if (oauthError) throw oauthError;
-
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) throw sessionError;
-
-      const session = sessionData.session;
-      if (!session?.user?.id) throw new Error("Usuário não autenticado");
-
-      const { data: userData, error: userError } = await supabase
-        .from<SupabaseUser, SupabaseUser>("auth.users") // 👈 corrigido aqui
-        .select("*")
-        .eq("id", session.user.id)
-        .single();
-      if (userError || !userData) throw userError || new Error("Usuário não encontrado");
-
-      const mappedUser = mapSupabaseUser(userData);
-
-      await api.post("/signin-providers", { provider, user: mappedUser, session });
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido");
-    } finally {
-      setLoading(false);
+  try {
+    if (provider === "imlinkedy") {
+      window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/${provider}`;
+      return;
     }
-  };
+
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: "/home" },
+    });
+    if (oauthError) throw oauthError;
+
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+
+    const session = sessionData.session;
+    if (!session?.user?.id) throw new Error("Usuário não autenticado");
+
+    // ✅ sem genéricos no from
+    const { data, error: userError } = await supabase
+      .from("auth.users")
+      .select("*")
+      .eq("id", session.user.id)
+      .single();
+
+    if (userError || !data) throw userError || new Error("Usuário não encontrado");
+
+    // ✅ força tipagem só aqui
+    const userData = data as SupabaseUser;
+
+    const mappedUser = mapSupabaseUser(userData);
+
+    await api.post("/signin-providers", { provider, user: mappedUser, session });
+  } catch (err: unknown) {
+    setError(err instanceof Error ? err.message : "Erro desconhecido");
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (!isOnline) return <Loadingconnection />;
 
