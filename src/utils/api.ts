@@ -5,7 +5,7 @@ export type ApiErrorResponse = {
 };
 
 const api = axios.create({
-  baseURL: "https://korddyfirebases.onrender.com/api/v1",
+  baseURL: "https://korddyfirebases.onrender.com/api/v1/",
   withCredentials: true, // cookies cross-domain
   headers: {
     Accept: "application/json", // mantém só Accept
