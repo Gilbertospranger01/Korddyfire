@@ -40,14 +40,14 @@ const Header = () => {
 
   // --- Buscar saldo ---
   const fetchBalance = useCallback(async () => {
-    try {
-      const res = await api.get("/wallets");
-      setBalance(res.data.balance ?? balance);
-    } catch (err) {
-      console.log(products);
-      console.error("Erro ao buscar saldo", err);
-    }
-  }, [balance]);
+  try {
+    const res = await api.get("/wallets");
+    setBalance(res.data.balance ?? balance);
+  } catch (err) {
+    console.log(products);
+    console.error("Erro ao buscar saldo", err);
+  }
+}, [balance, products]);
 
   // --- Buscar todos os produtos ---
   const fetchProducts = useCallback(async () => {
