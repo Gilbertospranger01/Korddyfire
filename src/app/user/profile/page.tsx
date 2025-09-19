@@ -48,7 +48,7 @@ const Profile = () => {
 
     setLoading(true);
     try {
-      const response = await api.get(`/user/`);
+      const response = await api.get(`users/user/`);
 
       const formatDate = (dateString: string) => {
         if (!dateString) return '';
