@@ -59,7 +59,7 @@ const handleSignup = useCallback(
     }
 
     try {
-      const response = await api.post("auth/signup", formData);
+      const response = await api.post("/auth/signup", formData);
       alert(response.data.message || "Cadastro realizado com sucesso!");
       router.push("/signin");
     } catch (error) {
