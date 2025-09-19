@@ -149,7 +149,7 @@ const Edit_Profile = () => {
       formData.append('file', file);
 
       // Se o backend espera multipart/form-data, use formData diretamente:
-      const response = await api.post("/upload", formData, {
+      const response = await api.post("users/upload", formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
