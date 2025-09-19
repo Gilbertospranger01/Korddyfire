@@ -7,6 +7,7 @@ import Header from "@/components/header";
 import Loadingpage from "@/loadingpages/loadingpage";
 import { useRouter } from "next/navigation";
 import api from "@/utils/api";
+import { useAuth } from "@/hooks/useAuth";
 
 type Product = {
   id: string;
@@ -19,6 +20,7 @@ type Product = {
 
 const Home = () => {
   const router = useRouter();
+  const { session } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadin, setLoadin] = useState<Record<string, boolean>>({});
@@ -27,22 +29,24 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const userRes = await api.get("/user");
-        // Só logar se quiser, não usado no JSX
-        console.log("User:", userRes.data.username, userRes.data.picture);
+        if (!session) {
+          router.push("/signin");
+          return;
+        }
+
+        console.log("User:", session.user.username, session.user.picture);
 
         const prodRes = await api.get("/products");
         setProducts(prodRes.data || []);
       } catch (err) {
         console.error("Erro ao buscar dados", err);
-        router.push("/signin");
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [router]);
+  }, [session, router]);
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -69,17 +73,32 @@ const Home = () => {
           <h3 className="text-2xl font-bold mb-4 text-center md:text-left">Featured Products</h3>
           <div className="flex space-x-4 overflow-x-auto">
             {products.map((product) => (
-              <div key={product.id} className="bg-white max-w-[300px] w-full rounded-2xl shadow-lg overflow-hidden mb-5">
+              <div
+                key={product.id}
+                className="bg-white max-w-[300px] w-full rounded-2xl shadow-lg overflow-hidden mb-5"
+              >
                 <div className="relative w-full h-[300px]">
-                  <Image src={product.image || "/placeholder.jpg"} alt={product.name} fill className="object-cover" />
-                  <button onClick={() => toggleFavorite(product.id)} className="absolute top-2 right-2 bg-opacity-70 p-1 rounded-full hover:bg-opacity-100 transition cursor-pointer">
+                  <Image
+                    src={product.image || "/placeholder.jpg"}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                  />
+                  <button
+                    onClick={() => toggleFavorite(product.id)}
+                    className="absolute top-2 right-2 bg-opacity-70 p-1 rounded-full hover:bg-opacity-100 transition cursor-pointer"
+                  >
                     <Heart
                       size={24}
                       className={`transition ${favorites[product.id] ? "fill-red-500 text-red-500" : "text-white"}`}
                       fill={favorites[product.id] ? "red" : "none"}
                     />
                   </button>
-                  <span className={`absolute top-2 left-2 text-xs px-2 py-1 rounded-full font-medium ${product.stock > 0 ? "bg-green-600 text-white" : "bg-red-500 text-white"}`}>
+                  <span
+                    className={`absolute top-2 left-2 text-xs px-2 py-1 rounded-full font-medium ${
+                      product.stock > 0 ? "bg-green-600 text-white" : "bg-red-500 text-white"
+                    }`}
+                  >
                     {product.stock > 0 ? "In Stock" : "Out of Stock"}
                   </span>
                 </div>
