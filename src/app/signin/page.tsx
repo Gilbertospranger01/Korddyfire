@@ -19,113 +19,20 @@ import Input from "@/components/ui/input";
 import BackgroundImage from "@/components/backgroundimage";
 import Loadingconnection from "@/loadingpages/loadingconnection";
 
-// ----------------------
-// Tipagens
-// ----------------------
-type FormData = {
-  email: string;
-  password: string;
-};
+type FormData = { email: string; password: string };
 
-interface SupabaseUser {
-  id: string | null;
-  email: string | null;
-  phone: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-  confirmed_at: string | null;
-  confirmation_sent_at: string | null;
-  invited_at: string | null;
-  last_sign_in_at: string | null;
-  is_anonymous: boolean | null;
-  raw_app_meta_data: {
-    provider: string | null;
-    providers: string[];
-  };
-  raw_user_meta_data: {
-    iss: string | null;
-    sub: string | null;
-    name: string | null;
-    full_name: string | null;
-    nickname: string | null;
-    slug: string | null;
-    email: string | null;
-    avatar: string | null;
-    provider_id: string | null;
-    email_verified: string | null;
-    phone_verified: boolean | null;
-    user_name: string | null;
-    preferred_username: string | null;
-  };
-}
-
-interface MappedUser {
-  id: string | null;
-  email: string | null;
-  phone: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-  email_confirmed_at: string | null;
-  confirmation_sent_at: string | null;
-  invited_at: string | null;
-  last_sign_in_at: string | null;
-  aud: boolean | null;
-  provider: string | null;
-  "metadata.providers": string[];
-  "metadata.iss": string | null;
-  "metadata.sub": string | null;
-  name: string | null;
-  username: string | null;
-  slug: string | null;
-  picture_url: string | null;
-  provider_id: string | null;
-  phone_verified: boolean | null;
-}
-
-// ----------------------
-// Helpers
-// ----------------------
-function mapSupabaseUser(user: SupabaseUser): MappedUser {
-  const rawMeta = user.raw_user_meta_data;
-  const appMeta = user.raw_app_meta_data;
-
-  return {
-    id: user.id,
-    email: user.email,
-    phone: user.phone,
-    created_at: user.created_at,
-    updated_at: user.updated_at,
-    email_confirmed_at: rawMeta.email_verified ?? user.confirmed_at,
-    confirmation_sent_at: user.confirmation_sent_at,
-    invited_at: user.invited_at,
-    last_sign_in_at: user.last_sign_in_at,
-    aud: user.is_anonymous,
-    provider: appMeta.provider,
-    "metadata.providers": appMeta.providers ?? [],
-    "metadata.iss": rawMeta.iss,
-    "metadata.sub": rawMeta.sub,
-    name: rawMeta.full_name ?? rawMeta.name,
-    username: rawMeta.user_name ?? rawMeta.nickname ?? rawMeta.preferred_username,
-    slug: rawMeta.slug,
-    picture_url: rawMeta.avatar,
-    provider_id: rawMeta.provider_id,
-    phone_verified: rawMeta.phone_verified ?? null,
-  };
-}
-
-// ----------------------
-// Componente principal
-// ----------------------
 const supabase = createClient();
 
 export default function Signin() {
   const router = useRouter();
+
   const [formData, setFormData] = useState<FormData>({ email: "", password: "" });
-  const [loading, setLoading] = useState(false);
+  const [loadingEmail, setLoadingEmail] = useState(false);
+  const [loadingProvider, setLoadingProvider] = useState<null | string>(null);
   const [error, setError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(true);
 
-  // Verificar conexão online/offline
+  // online/offline
   useEffect(() => {
     const updateOnlineStatus = () => setIsOnline(navigator.onLine);
     window.addEventListener("online", updateOnlineStatus);
@@ -137,74 +44,104 @@ export default function Signin() {
     };
   }, []);
 
-  // Handler de input
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
 
-  // Login email/senha
+  // ---- Email / senha ----
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+    setLoadingEmail(true);
 
     try {
+      // Ajuste: sua API pode retornar dados específicos; trate conforme necessário
       await api.post("/auth/signin/", formData);
-      alert("Login realizado com sucesso. Redirecionando...");
-      router.push("/home");
+      // Substitui alert por navegação segura
+      router.replace("/home");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao fazer login.");
     } finally {
-      setLoading(false);
+      setLoadingEmail(false);
     }
   };
 
-  // Login OAuth
-const handleOAuthLogin = async (
-  provider: "google" | "facebook" | "github" | "imlinkedy"
-) => {
-  setLoading(true);
-  setError(null);
+  // Helper: normaliza user do session.user para sua API
+  const mapSessionUserToPayload = (user: any) => {
+    if (!user) return null;
+    return {
+      id: user.id ?? null,
+      email: user.email ?? null,
+      phone: user.phone ?? null,
+      provider: user.app_metadata?.provider ?? null,
+      providers: user.app_metadata?.providers ?? [],
+      name:
+        user.user_metadata?.full_name ??
+        user.user_metadata?.name ??
+        user.user_metadata?.preferred_username ??
+        null,
+      username: user.user_metadata?.user_name ?? null,
+      picture_url: user.user_metadata?.avatar_url ?? user.user_metadata?.avatar ?? null,
+      raw: {
+        app_metadata: user.app_metadata ?? null,
+        user_metadata: user.user_metadata ?? null,
+      },
+    };
+  };
 
-  try {
-    if (provider === "imlinkedy") {
-      window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/${provider}`;
-      return;
+  // ---- OAuth ----
+  const handleOAuthLogin = async (
+    provider: "google" | "facebook" | "github" | "imlinkedy"
+  ) => {
+    setError(null);
+    setLoadingProvider(provider);
+
+    try {
+      // provider custom that lives on backend
+      if (provider === "imlinkedy") {
+        const backendAuthUrl =
+          process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") ??
+          process.env.NEXT_PUBLIC_BASE_URL ??
+          "";
+        if (!backendAuthUrl) throw new Error("BACKEND URL não configurado");
+        window.location.href = `${backendAuthUrl}/auth/${provider}`;
+        return; // redirecting away
+      }
+
+      // signInWithOAuth normalmente redireciona; quando não redireciona, tentamos pegar sessão
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          // se quiser definir redirectTo, use: redirectTo: `${location.origin}/home`
+          redirectTo: `${window.location.origin}/home`,
+        },
+      });
+      if (oauthError) throw oauthError;
+
+      // Em muitos fluxos o usuário será redirecionado antes dessa linha. Mas se o SDK retornar sessão imediatamente:
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        // não fatal — pode ser que a página seja redirecionada. Apenas logamos a diferença.
+        console.warn("getSession error (não fatal):", sessionError);
+      }
+
+      const session = sessionData?.session;
+      if (session?.user) {
+        // mapeia e envia para sua API (signin-providers)
+        const mapped = mapSessionUserToPayload(session.user);
+        await api.post("/auth/signin-providers/", { provider, user: mapped, session });
+        // redireciona localmente
+        router.replace("/home");
+      } else {
+        // Normal flow: signInWithOAuth geralmente redireciona; se chegou aqui sem sessão,
+        // o usuário será redirecionado e esse código provavelmente não será executado.
+        // Mantemos UI limpa e aguardamos redirect do provider.
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro desconhecido no OAuth.");
+    } finally {
+      setLoadingProvider(null);
     }
-
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: "/home" },
-    });
-    if (oauthError) throw oauthError;
-
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) throw sessionError;
-
-    const session = sessionData.session;
-    if (!session?.user?.id) throw new Error("Usuário não autenticado");
-
-    // ✅ sem genéricos no from
-    const { data, error: userError } = await supabase
-      .from("auth.users")
-      .select("*")
-      .eq("id", session.user.id)
-      .single();
-
-    if (userError || !data) throw userError || new Error("Usuário não encontrado");
-
-    // ✅ força tipagem só aqui
-    const userData = data as SupabaseUser;
-
-    const mappedUser = mapSupabaseUser(userData);
-
-    await api.post("/auth/signin-providers/", { provider, user: mappedUser, session });
-  } catch (err: unknown) {
-    setError(err instanceof Error ? err.message : "Erro desconhecido");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   if (!isOnline) return <Loadingconnection />;
 
@@ -220,14 +157,12 @@ const handleOAuthLogin = async (
         <motion.div
           initial={{ x: "-100%", opacity: 0 }}
           animate={{ x: "0%", opacity: 1 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.45 }}
           className="w-full max-w-md flex flex-col justify-center items-center bg-gray-950 p-6 md:p-8 rounded-lg shadow-lg"
         >
-          {/* Título */}
           <h2 className="text-2xl font-bold mb-6 text-center text-white">Sign In</h2>
 
-          {/* Formulário */}
-          <form className="w-full" onSubmit={handleSignIn}>
+          <form className="w-full" onSubmit={handleSignIn} noValidate>
             <Input
               type="email"
               name="email"
@@ -262,18 +197,21 @@ const handleOAuthLogin = async (
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loadingEmail || !!loadingProvider}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 w-full rounded focus:outline-none focus:ring-2 transition-all disabled:opacity-50"
+                aria-busy={loadingEmail}
               >
-                {loading ? "Carregando..." : "Entrar"}
+                {loadingEmail ? "Carregando..." : "Entrar"}
               </button>
             </div>
           </form>
 
-          {/* Erro */}
-          {error && <p role="alert" className="text-red-500 text-sm mt-2">{error}</p>}
+          {error && (
+            <p role="alert" className="text-red-500 text-sm mt-2">
+              {error}
+            </p>
+          )}
 
-          {/* Criar conta */}
           <p className="text-center text-gray-400 text-sm mt-6">
             Não tem uma conta?
             <Link href="/signup" className="text-blue-400 hover:text-blue-600 ml-2">
@@ -281,23 +219,45 @@ const handleOAuthLogin = async (
             </Link>
           </p>
 
-          {/* OAuth */}
           <div className="flex flex-col items-center mt-4 mb-10">
             <p className="text-gray-600 text-sm mb-2">Ou entre com</p>
             <div className="flex space-x-6">
-              <button onClick={() => handleOAuthLogin("google")} title="Entrar com Google">
-                <FcGoogle size={30} />
+              <button
+                onClick={() => handleOAuthLogin("google")}
+                title="Entrar com Google"
+                disabled={loadingEmail || loadingProvider !== null}
+                aria-busy={loadingProvider === "google"}
+                className="focus:outline-none"
+              >
+                {loadingProvider === "google" ? "..." : <FcGoogle size={30} />}
               </button>
-              <button onClick={() => handleOAuthLogin("facebook")} title="Entrar com Facebook">
-                <FaFacebook size={30} className="text-blue-600" />
+
+              <button
+                onClick={() => handleOAuthLogin("facebook")}
+                title="Entrar com Facebook"
+                disabled={loadingEmail || loadingProvider !== null}
+                aria-busy={loadingProvider === "facebook"}
+                className="focus:outline-none"
+              >
+                {loadingProvider === "facebook" ? "..." : <FaFacebook size={30} className="text-blue-600" />}
               </button>
-              <button onClick={() => handleOAuthLogin("github")} title="Entrar com GitHub">
-                <FaGithub size={30} className="text-white" />
+
+              <button
+                onClick={() => handleOAuthLogin("github")}
+                title="Entrar com GitHub"
+                disabled={loadingEmail || loadingProvider !== null}
+                aria-busy={loadingProvider === "github"}
+                className="focus:outline-none"
+              >
+                {loadingProvider === "github" ? "..." : <FaGithub size={30} className="text-white" />}
               </button>
+
               <button
                 onClick={() => handleOAuthLogin("imlinkedy")}
-                className="relative w-7 h-7 rounded-full overflow-hidden flex items-center justify-center bg-gray-800 hover:bg-gray-700"
+                className="relative w-7 h-7 rounded-full overflow-hidden flex items-center justify-center bg-gray-800 hover:bg-gray-700 focus:outline-none"
                 title="Entrar com Imlinkedy"
+                disabled={loadingEmail || loadingProvider !== null}
+                aria-busy={loadingProvider === "imlinkedy"}
               >
                 <Image
                   src="https://imlinked.vercel.app/favicon.png"
