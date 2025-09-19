@@ -149,7 +149,7 @@ export default function Signin() {
     setError(null);
 
     try {
-      await api.post("/signin", formData);
+      await api.post("auth/signin/", formData);
       alert("Login realizado com sucesso. Redirecionando...");
       router.push("/home");
     } catch (err: unknown) {
@@ -198,7 +198,7 @@ const handleOAuthLogin = async (
 
     const mappedUser = mapSupabaseUser(userData);
 
-    await api.post("/signin-providers", { provider, user: mappedUser, session });
+    await api.post("auth/signin-providers/", { provider, user: mappedUser, session });
   } catch (err: unknown) {
     setError(err instanceof Error ? err.message : "Erro desconhecido");
   } finally {
