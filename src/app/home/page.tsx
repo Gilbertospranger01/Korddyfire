@@ -36,7 +36,7 @@ const Home = () => {
 
         console.log("User:", session.user.username, session.user.picture);
 
-        const prodRes = await api.get("/products");
+        const prodRes = await api.get("/products/products");
         setProducts(prodRes.data || []);
       } catch (err) {
         console.error("Erro ao buscar dados", err);
