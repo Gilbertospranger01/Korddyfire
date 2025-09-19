@@ -182,7 +182,7 @@ const Edit_Profile = () => {
     setLoading(true);
 
     try {
-      const path = userData.picture_url.split('/uploads/')[1];
+      const path = userData.picture_url.split('users/uploads/')[1];
       if (!path) throw new Error("Caminho inválido da imagem.");
 
       await api.delete("/upload/profile-picture", {
@@ -190,7 +190,7 @@ const Edit_Profile = () => {
         withCredentials: true,
       });
 
-      await api.put(`/edit_profile`, {
+      await api.put(`users/edit_profile`, {
         ...userData,
         picture_url: '',
         birthdate: formatDateForAPI(userData.birthdate),
