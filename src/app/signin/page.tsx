@@ -181,7 +181,7 @@ export default function Signin() {
                 aria-busy={loadingProvider === "google"}
                 className="focus:outline-none"
               >
-                {loadingProvider === "google" ? "..." : <FcGoogle size={30} />}
+              <FcGoogle size={30} />
               </button>
 
               <button
@@ -191,9 +191,7 @@ export default function Signin() {
                 aria-busy={loadingProvider === "facebook"}
                 className="focus:outline-none"
               >
-                {loadingProvider === "facebook" ? "..." : (
                   <FaFacebook size={30} className="text-blue-600" />
-                )}
               </button>
 
               <button
@@ -203,9 +201,7 @@ export default function Signin() {
                 aria-busy={loadingProvider === "github"}
                 className="focus:outline-none"
               >
-                {loadingProvider === "github" ? "..." : (
                   <FaGithub size={30} className="text-white" />
-                )}
               </button>
 
               <button
