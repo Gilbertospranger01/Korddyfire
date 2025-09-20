@@ -170,52 +170,70 @@ export default function Signin() {
             </Link>
           </p>
 
-          {/* OAuth */}
+          {/* OAuth existente */}
           <div className="flex flex-col items-center mt-4 mb-10">
             <p className="text-gray-600 text-sm mb-2">Ou entre com</p>
-            <div className="flex gap-4 flex-wrap justify-center">
-              {/* Google */}
+            <div className="flex space-x-6">
               <button
                 onClick={() => handleOAuthLogin("google")}
                 title="Entrar com Google"
                 disabled={loadingEmail || loadingProvider !== null}
                 aria-busy={loadingProvider === "google"}
-                className="w-12 h-12 flex items-center justify-center rounded-xl border border-gray-300 bg-white hover:bg-gray-100 transition focus:outline-none"
+                className="focus:outline-none"
               >
-                <FcGoogle size={24} />
+                <FcGoogle size={30} />
               </button>
 
-              {/* Facebook */}
               <button
                 onClick={() => handleOAuthLogin("facebook")}
                 title="Entrar com Facebook"
                 disabled={loadingEmail || loadingProvider !== null}
                 aria-busy={loadingProvider === "facebook"}
-                className="w-12 h-12 flex items-center justify-center rounded-xl border border-gray-300 bg-white hover:bg-gray-100 transition focus:outline-none"
+                className="focus:outline-none"
               >
-                <FaFacebook size={24} className="text-blue-600" />
+                <FaFacebook size={30} className="text-blue-600" />
               </button>
 
-              {/* GitHub */}
               <button
                 onClick={() => handleOAuthLogin("github")}
                 title="Entrar com GitHub"
                 disabled={loadingEmail || loadingProvider !== null}
                 aria-busy={loadingProvider === "github"}
-                className="w-12 h-12 flex items-center justify-center rounded-xl border border-gray-300 bg-white hover:bg-gray-100 transition focus:outline-none"
+                className="focus:outline-none"
               >
-                <FaGithub size={24} className="text-black" />
+                <FaGithub size={30} className="text-white" />
               </button>
 
-              {/* Korddy Fire */}
+              <button
+                onClick={() => handleOAuthLogin("imlinkedy")}
+                className="relative w-7 h-7 rounded-full overflow-hidden flex items-center justify-center bg-gray-800 hover:bg-gray-700 focus:outline-none"
+                title="Entrar com Imlinkedy"
+                disabled={loadingEmail || loadingProvider !== null}
+                aria-busy={loadingProvider === "imlinkedy"}
+              >
+                <Image
+                  src="https://imlinked.vercel.app/favicon.png"
+                  alt="Imlinkedy"
+                  fill
+                  className="object-cover"
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* --- From Korddy Section --- */}
+          <div className="mt-6 text-center space-y-3 w-full">
+            <p className="text-gray-400 text-sm">From Korddy</p>
+
+            <div className="flex justify-center gap-3 flex-wrap">
+              {/* Korddy Fire (imagem local) */}
               <button
                 type="button"
                 onClick={() => window.open("https://korddyfire.vercel.app", "_blank")}
-                className="w-12 h-12 flex items-center justify-center rounded-xl border border-gray-300 bg-white hover:bg-gray-100 transition focus:outline-none"
-                title="Korddy Fire"
+                className="flex items-center justify-center w-12 h-12 rounded-xl border border-gray-300 hover:bg-gray-100 transition shadow-sm bg-white"
               >
                 <Image
-                  src="https://korddyfire.vercel.app/favicon.png"
+                  src="/favicon.png"
                   alt="Korddy Fire"
                   width={24}
                   height={24}
@@ -223,16 +241,14 @@ export default function Signin() {
                 />
               </button>
 
-              {/* Imlinkedy */}
+              {/* Imlinkedy (imagem via link) */}
               <button
-                onClick={() => handleOAuthLogin("imlinkedy")}
-                title="Entrar com Imlinkedy"
-                disabled={loadingEmail || loadingProvider !== null}
-                aria-busy={loadingProvider === "imlinkedy"}
-                className="w-12 h-12 flex items-center justify-center rounded-xl border border-gray-300 bg-white hover:bg-gray-100 transition focus:outline-none"
+                type="button"
+                onClick={() => window.open("https://imlinked.vercel.app", "_blank")}
+                className="flex items-center justify-center w-12 h-12 rounded-xl border border-gray-300 hover:bg-gray-100 transition shadow-sm bg-white"
               >
                 <Image
-                  src="/favicon.png"
+                  src="https://imlinked.vercel.app/favicon.png"
                   alt="Imlinkedy"
                   width={24}
                   height={24}
