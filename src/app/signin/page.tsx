@@ -72,18 +72,18 @@ export default function Signin() {
     }
   };
 
-  // ---- OAuth (chama endpoints do backend) ----
-  const handleOAuthLogin = (provider: Provider) => {
+  // ---- OAuth usando api ----
+  const handleOAuthLogin = async (provider: Provider) => {
     setError(null);
     setLoadingProvider(provider);
 
     try {
-      const backendAuthUrl =
-        process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") ?? "";
-      if (!backendAuthUrl) throw new Error("BACKEND URL não configurado");
-
-      // Ex: /auth/signin-google/, /auth/signin-facebook/
-      window.location.href = `${backendAuthUrl}/auth/signin-${provider}/`;
+      const res = await api.get(`/auth/signin-${provider}/`);
+      if (res.data?.redirect_url) {
+        window.location.href = res.data.redirect_url;
+      } else {
+        throw new Error("Resposta inválida do servidor.");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao iniciar OAuth.");
       setLoadingProvider(null);
@@ -181,7 +181,7 @@ export default function Signin() {
                 aria-busy={loadingProvider === "google"}
                 className="focus:outline-none"
               >
-              <FcGoogle size={30} />
+                <FcGoogle size={30} />
               </button>
 
               <button
@@ -191,7 +191,7 @@ export default function Signin() {
                 aria-busy={loadingProvider === "facebook"}
                 className="focus:outline-none"
               >
-                  <FaFacebook size={30} className="text-blue-600" />
+                <FaFacebook size={30} className="text-blue-600" />
               </button>
 
               <button
@@ -201,7 +201,7 @@ export default function Signin() {
                 aria-busy={loadingProvider === "github"}
                 className="focus:outline-none"
               >
-                  <FaGithub size={30} className="text-white" />
+                <FaGithub size={30} className="text-white" />
               </button>
 
               <button
