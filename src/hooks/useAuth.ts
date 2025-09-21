@@ -1,6 +1,7 @@
+// useAuth hook
 import { useState, useEffect } from "react";
 import api from "@/utils/api";
-import type { User } from "@/types/types"; 
+import type { User } from "@/types/types";
 
 export function useAuth() {
   const [session, setSession] = useState<{ user: User } | null>(null);
@@ -8,14 +9,15 @@ export function useAuth() {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const { data } = await api.get("/auth/getSession");
+        const { data } = await api.get("/auth/getSession", {
+          withCredentials: true,
+        });
         setSession({ user: data.user });
       } catch (error) {
         console.error("Erro ao buscar sessão:", error);
         setSession(null);
       }
     };
-
     fetchSession();
   }, []);
 
