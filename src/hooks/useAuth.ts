@@ -8,9 +8,7 @@ export function useAuth() {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const { data } = await api.get("/auth/getSession", {
-          withCredentials: true,
-        });
+        const { data } = await api.get("/auth/getSession");
         setSession({ user: data.user });
       } catch (error) {
         console.error("Erro ao buscar sessão:", error);
