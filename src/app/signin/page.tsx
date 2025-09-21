@@ -57,20 +57,21 @@ export default function Signin() {
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
 
   // ---- Email / senha ----
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoadingEmail(true);
+  // handleSignIn
+const handleSignIn = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError(null);
+  setLoadingEmail(true);
 
-    try {
-      await api.post("/auth/signin/", formData);
-      router.replace("/home");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao fazer login.");
-    } finally {
-      setLoadingEmail(false);
-    }
-  };
+  try {
+    await api.post("/auth/signin", formData, { withCredentials: true });
+    router.replace("/home");
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Erro ao fazer login.");
+  } finally {
+    setLoadingEmail(false);
+  }
+};
 
   // ---- OAuth usando api ----
   const handleOAuthLogin = async (provider: Provider) => {
