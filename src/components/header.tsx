@@ -12,40 +12,20 @@ import { IoChatboxEllipses } from "react-icons/io5";
 import ButtonTheme from "../app/buttonTheme";
 import api from "@/utils/api";
 
-type Product = { id: string; name: string; price: number; stock: number; image?: string; };
-type User = { id: string; name: string; };
+type User = { id: string; name: string };
 
 const Header = () => {
   const { session } = useAuth();
   const router = useRouter();
   const { showSidebar, setShowSidebar } = useSidebar();
 
-  const [products, setProducts] = useState<Product[]>([]);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [username, setUsername] = useState<string>("Usuário");
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
-  const [balance, setBalance] = useState<number>(0);
 
-  const fetchBalance = useCallback(async () => {
-    try {
-      const res = await api.get("/wallets");
-      setBalance(res.data.balance ?? 0);
-    } catch (err) {
-      console.error("Erro ao buscar saldo", err);
-    }
-  }, []);
-
-  const fetchProducts = useCallback(async () => {
-    try {
-      const res = await api.get("/products");
-      setProducts(res.data || []);
-    } catch (err) {
-      console.error("Erro ao buscar produtos", err);
-    }
-  }, []);
-
+  // --- Buscar perfil do usuário ---
   const fetchUserProfile = useCallback(async () => {
     try {
       const res = await api.get("/user");
@@ -56,12 +36,13 @@ const Header = () => {
     }
   }, []);
 
+  // --- Buscar produtos filtrados ---
   const handleSearch = useCallback(async () => {
     if (!searchTerm.trim()) return;
     setLoading(true);
     try {
       const res = await api.get(`/products/${searchTerm}`);
-      setProducts(res.data || []);
+      setResults(res.data || []);
     } catch (err) {
       console.error("Erro ao buscar produtos filtrados", err);
     } finally {
@@ -69,18 +50,15 @@ const Header = () => {
     }
   }, [searchTerm]);
 
+  // --- Debounce na pesquisa ---
   useEffect(() => {
     const delay = setTimeout(() => handleSearch(), 500);
     return () => clearTimeout(delay);
   }, [searchTerm, handleSearch]);
 
   useEffect(() => {
-    setLoading(true);
-    fetchBalance();
-    fetchProducts();
     fetchUserProfile();
-    setLoading(false);
-  }, [fetchBalance, fetchProducts, fetchUserProfile]);
+  }, [fetchUserProfile]);
 
   if (!session)
     return (
@@ -94,22 +72,29 @@ const Header = () => {
       <Sidebar />
       <header className="w-full fixed top-0 left-0 z-50 border-b border-gray-300 bg-white dark:bg-gray-900 text-black dark:text-white">
         <div className="max-w-[1280px] mx-auto flex justify-between items-center px-4 py-3 md:py-2">
+          {/* Logo */}
           <Link href="/home">
-            <h1 className="text-xl sm:text-2xl font-bold">Korddyfire</h1>
+            <h1 className="text-xl sm:text-2xl font-bold cursor-pointer">Korddyfire</h1>
           </Link>
 
-          <div className="flex-1 px-4 md:px-6">
+          {/* Search */}
+          <div className="flex-1 px-4 md:px-6 relative">
             <InputSearch
               value={searchTerm}
               onChange={setSearchTerm}
               onSearch={handleSearch}
-              onClear={() => { setSearchTerm(""); setResults([]); }}
+              onClear={() => {
+                setSearchTerm("");
+                setResults([]);
+              }}
             />
+
             {loading && (
               <div className="absolute w-full text-white h-20 shadow-lg mt-2 z-50 flex items-center justify-center">
                 <p className="text-gray-400 text-center">Carregando...</p>
               </div>
             )}
+
             {!loading && searchTerm.trim() && results.length === 0 && (
               <div className="absolute w-full text-white shadow-lg mt-2 z-50 flex items-center justify-center">
                 <p className="text-gray-400 text-center">Nenhum resultado encontrado.</p>
@@ -117,6 +102,7 @@ const Header = () => {
             )}
           </div>
 
+          {/* User Actions */}
           <div className="flex items-center gap-4 md:gap-6">
             <button onClick={() => router.push("/chat")} className="text-xl md:text-2xl">
               <IoChatboxEllipses size={30} />
