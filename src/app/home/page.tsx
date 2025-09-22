@@ -34,7 +34,6 @@ const Home = () => {
           return;
         }
 
-        console.log("User:", session.user.username, session.user.picture);
 
         const prodRes = await api.get("/products/products");
         setProducts(prodRes.data || []);
