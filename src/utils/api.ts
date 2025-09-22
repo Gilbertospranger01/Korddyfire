@@ -1,4 +1,3 @@
-// utils/api.ts
 import axios, { AxiosInstance, AxiosResponse } from "axios";
 
 export interface ApiErrorResponse {
@@ -10,20 +9,30 @@ export interface ApiErrorResponse {
 
 const API_BASE = "https://korddyfirebases.onrender.com/api/v1/";
 
+// Função para pegar cookie
+const getCookie = (name: string) =>
+  document.cookie
+    .split("; ")
+    .find((c) => c.startsWith(name + "="))
+    ?.split("=")[1];
+
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE,
   timeout: 20000,
-  withCredentials: true, // permite enviar cookies
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json",
   },
 });
 
-api.interceptors.request.use(
-  (config) => config, // sem token manual, cookie será enviado automaticamente
-  (error) => Promise.reject(error)
-);
+// Interceptor para adicionar Authorization com token
+api.interceptors.request.use((config) => {
+  const token = getCookie("auth_token");
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
