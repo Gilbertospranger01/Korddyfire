@@ -22,7 +22,7 @@ const Seller_Dashboard = () => {
     if (!session?.user) return null;
 
     // Garante que o TS reconheça os campos do metadata
-    const metadata = session.user.user_metadata as UserMetadata;
+    const metadata = session.user.metadata as UserMetadata;
 
     return {
       id: session.user.id,
