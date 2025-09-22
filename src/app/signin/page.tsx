@@ -85,10 +85,9 @@ const handleSignIn = async (e: React.FormEvent) => {
     );
 
     // grava token em cookie
-    setCookie("auth_token", data.token);
-
-    // redireciona
-    router.replace("/home");
+    setCookie("auth_token", data.token, 2);
+      localStorage.setItem("auth_user", JSON.stringify(data.user));
+    setTimeout(() => router.replace("/home"), 800);
   } catch (err) {
     const axiosErr = err as AxiosError<BackendErrorResponse>;
     const msg =
