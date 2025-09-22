@@ -92,11 +92,11 @@ const handleSignIn = async (e: React.FormEvent) => {
   } catch (err) {
     const axiosErr = err as AxiosError<BackendErrorResponse>;
     const msg =
-      axiosErr.response?.data?.error ||
-      axiosErr.response?.data?.detail ||
-      axiosErr.response?.data?.message ||
-      "Erro ao fazer login.";
-    setError(msg);
+  axiosErr.response?.data?.error ||
+  axiosErr.response?.data?.detail ||
+  axiosErr.response?.data?.message ||
+  `Erro ao fazer login: ${err instanceof Error ? err.message : err}`;
+setError(msg);
   } finally {
     setLoadingEmail(false);
   }
