@@ -14,8 +14,8 @@ export type User = {
   email_change: string | null;
   email_change_sent_at: string | null;
   last_sign_in_at: string | null;
-  metadata: unknown | null;
-  flags: unknown | null;
+  metadata: Record<string, any> | null;
+  flags: Record<string, any> | null;
   picture_url: string | null;
   name: string;
   username: string;
