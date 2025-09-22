@@ -78,27 +78,30 @@ const Header = () => {
           </Link>
 
           {/* Search */}
-          <div className="flex-1 min-w-[150px] max-w-[400px] relative">
-            <InputSearch
-              value={searchTerm}
-              onChange={setSearchTerm}
-              onSearch={handleSearch}
-              onClear={() => {
-                setSearchTerm("");
-                setResults([]);
-              }}
-            />
-            {loading && (
-              <div className="absolute w-full text-white h-20 shadow-lg mt-2 z-50 flex items-center justify-center rounded-lg bg-gray-800">
-                <p className="text-gray-400 text-center">Carregando...</p>
-              </div>
-            )}
-            {!loading && searchTerm.trim() && results.length === 0 && (
-              <div className="absolute w-full text-white shadow-lg mt-2 z-50 flex items-center justify-center rounded-lg bg-gray-800">
-                <p className="text-gray-400 text-center">Nenhum resultado encontrado.</p>
-              </div>
-            )}
-          </div>
+<div className="relative w-full sm:w-[250px] md:w-[300px] lg:w-[400px]">
+  <InputSearch
+    value={searchTerm}
+    onChange={setSearchTerm}
+    onSearch={handleSearch}
+    onClear={() => {
+      setSearchTerm("");
+      setResults([]);
+    }}
+    className="w-full" // garante que o input use 100% da largura do container
+  />
+
+  {loading && (
+    <div className="absolute w-full text-white h-20 shadow-lg mt-2 z-50 flex items-center justify-center rounded-lg bg-gray-800">
+      <p className="text-gray-400 text-center">Carregando...</p>
+    </div>
+  )}
+
+  {!loading && searchTerm.trim() && results.length === 0 && (
+    <div className="absolute w-full text-white shadow-lg mt-2 z-50 flex items-center justify-center rounded-lg bg-gray-800">
+      <p className="text-gray-400 text-center">Nenhum resultado encontrado.</p>
+    </div>
+  )}
+</div>
 
           {/* User Actions */}
           <div className="flex items-center gap-3 sm:gap-4">
