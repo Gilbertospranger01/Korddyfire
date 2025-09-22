@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import type { User } from "@/types/types";
 
-const getCookie = (name: string) =>
-  document.cookie
-    .split("; ")
-    .find((row) => row.startsWith(name + "="))
-    ?.split("=")[1] ?? null;
+const getCookie = (name: string) => {
+  const cookies = document.cookie.split(";").map((c) => c.trim());
+  const found = cookies.find((c) => c.startsWith(`${name}=`));
+  return found ? decodeURIComponent(found.split("=")[1]) : null;
+};
 
 // tipagem para o payload do JWT
 interface JwtPayload {
@@ -13,7 +13,7 @@ interface JwtPayload {
   id?: string;
   iat?: number;
   exp?: number;
-  [key: string]: unknown; // qualquer outra coisa
+  [key: string]: unknown;
 }
 
 const parseJwt = (token: string): JwtPayload | null => {
@@ -39,11 +39,8 @@ export function useAuth() {
     const token = getCookie("auth_token");
     if (token) {
       const decoded = parseJwt(token);
-      if (decoded && decoded.user) {
-        setSession({ user: decoded.user });
-      } else {
-        setSession(null);
-      }
+      if (decoded && decoded.user) setSession({ user: decoded.user });
+      else setSession(null);
     } else {
       setSession(null);
     }
