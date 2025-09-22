@@ -73,21 +73,35 @@ export default function Signin() {
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
 
   // ---- Email / senha ----
-  // handleSignIn
 const handleSignIn = async (e: React.FormEvent) => {
   e.preventDefault();
   setError(null);
   setLoadingEmail(true);
 
   try {
-    await api.post("/auth/signin", formData, { withCredentials: true });
+    const { data } = await api.post<AuthSuccessResponse>(
+      "/auth/signin",
+      formData
+    );
+
+    // grava token em cookie
+    setCookie("auth_token", data.token);
+
+    // redireciona
     router.replace("/home");
   } catch (err) {
-    setError(err instanceof Error ? err.message : "Erro ao fazer login.");
+    const axiosErr = err as AxiosError<BackendErrorResponse>;
+    const msg =
+      axiosErr.response?.data?.error ||
+      axiosErr.response?.data?.detail ||
+      axiosErr.response?.data?.message ||
+      "Erro ao fazer login.";
+    setError(msg);
   } finally {
     setLoadingEmail(false);
   }
 };
+
 
   // ---- OAuth usando api ----
   const handleOAuthLogin = async (provider: Provider) => {
