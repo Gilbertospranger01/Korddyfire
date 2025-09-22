@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import jwt_decode from "jwt-decode";
 import type { User } from "@/types/types";
 
 const getCookie = (name: string) =>
@@ -8,12 +7,21 @@ const getCookie = (name: string) =>
     .find((row) => row.startsWith(name + "="))
     ?.split("=")[1] ?? null;
 
-interface JwtPayload {
-  id: string;
-  iat: number;
-  exp: number;
-  user?: User;
-}
+const parseJwt = (token: string): any => {
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+};
 
 export function useAuth() {
   const [session, setSession] = useState<{ user: User } | null>(null);
@@ -21,17 +29,10 @@ export function useAuth() {
   useEffect(() => {
     const token = getCookie("auth_token");
     if (token) {
-      try {
-        const decoded = jwt_decode<JwtPayload>(token);
-        // se você enviou user dentro do token
-        if (decoded.user) {
-          setSession({ user: decoded.user });
-        } else {
-          // ou buscar do localStorage / cookie
-          setSession({ user: {} as User }); // fallback
-        }
-      } catch (err) {
-        console.error("Erro ao decodificar token", err);
+      const decoded = parseJwt(token);
+      if (decoded) {
+        setSession({ user: decoded.user || ({} as User) });
+      } else {
         setSession(null);
       }
     } else {
