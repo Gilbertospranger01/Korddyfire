@@ -5,18 +5,34 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-
-// Ícones
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaGithub, FaLock } from "react-icons/fa";
-
-// Utils e serviços
 import api from "@/utils/api";
-
-// Componentes
 import Input from "@/components/ui/input";
 import BackgroundImage from "@/components/backgroundimage";
 import Loadingconnection from "@/loadingpages/loadingconnection";
+import type { AxiosError } from "axios";
+import type { User } from "@/types/types";
+
+interface AuthSuccessResponse {
+  token: string;
+  message: string;
+  user: User;
+}
+
+interface BackendErrorResponse {
+  error?: string;
+  detail?: string;
+  message?: string;
+}
+
+const setCookie = (name: string, value: string, hours = 24) => {
+  const expires = new Date();
+  expires.setTime(expires.getTime() + hours * 60 * 60 * 1000);
+  document.cookie = `${name}=${encodeURIComponent(
+    value
+  )};expires=${expires.toUTCString()};path=/;Secure;SameSite=None`;
+};
 
 // ------------------
 // Types
