@@ -7,7 +7,16 @@ const getCookie = (name: string) =>
     .find((row) => row.startsWith(name + "="))
     ?.split("=")[1] ?? null;
 
-const parseJwt = (token: string): any => {
+// tipagem para o payload do JWT
+interface JwtPayload {
+  user?: User;
+  id?: string;
+  iat?: number;
+  exp?: number;
+  [key: string]: unknown; // qualquer outra coisa
+}
+
+const parseJwt = (token: string): JwtPayload | null => {
   try {
     const base64Url = token.split(".")[1];
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
@@ -17,7 +26,7 @@ const parseJwt = (token: string): any => {
         .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
         .join("")
     );
-    return JSON.parse(jsonPayload);
+    return JSON.parse(jsonPayload) as JwtPayload;
   } catch {
     return null;
   }
@@ -30,8 +39,8 @@ export function useAuth() {
     const token = getCookie("auth_token");
     if (token) {
       const decoded = parseJwt(token);
-      if (decoded) {
-        setSession({ user: decoded.user || ({} as User) });
+      if (decoded && decoded.user) {
+        setSession({ user: decoded.user });
       } else {
         setSession(null);
       }
