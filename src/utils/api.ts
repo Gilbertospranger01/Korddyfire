@@ -1,4 +1,5 @@
-import axios, { AxiosInstance, AxiosError, AxiosResponse } from "axios";
+// utils/api.ts
+import axios, { AxiosInstance, AxiosResponse } from "axios";
 
 export interface ApiErrorResponse {
   detail?: string;
@@ -12,29 +13,21 @@ const API_BASE = "https://korddyfirebases.onrender.com/api/v1/";
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE,
   timeout: 20000,
-  withCredentials: true, // permite envio de cookies cross-domain
+  withCredentials: true, // permite enviar cookies
   headers: {
     Accept: "application/json",
+    "Content-Type": "application/json",
   },
 });
 
-// Interceptor para ajustar Content-Type
-api.interceptors.request.use((config) => {
-  if (config.data instanceof FormData) {
-    // deixa o browser definir o Content-Type correto
-    if (config.headers) delete config.headers["Content-Type"];
-  } else {
-    if (config.headers) config.headers["Content-Type"] = "application/json";
-  }
-  return config;
-});
+api.interceptors.request.use(
+  (config) => config, // sem token manual, cookie será enviado automaticamente
+  (error) => Promise.reject(error)
+);
 
-// Interceptor de resposta com tipagem de erro
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (error: AxiosError<ApiErrorResponse>) => {
-    return Promise.reject(error.response?.data || { error: error.message });
-  }
+  (error) => Promise.reject(error)
 );
 
 export default api;
