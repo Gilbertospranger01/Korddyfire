@@ -95,9 +95,10 @@ const Home = () => {
           ))}
         </div>
       </main>
-      <footer className="bg-gray-950 py-3 w-full">
-        <div className="container mx-auto text-center">
-          <p className="text-white">&copy; 2025 Korddyfire. All rights reserved.</p>
+            {/* Footer */}
+      <footer className="bg-gray-950 py-4 w-full">
+        <div className="text-center text-gray-400 text-sm">
+          &copy; 2025 Korddyfire. All rights reserved.
         </div>
       </footer>
     </div>
