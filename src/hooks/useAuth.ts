@@ -20,7 +20,7 @@ export function useAuth() {
         setSession({ user: JSON.parse(storedUser) });
       } else if (token) {
         try {
-          const res = await api.get<{ user: User }>("/auth/me"); // endpoint que retorna usuário do token
+          const res = await api.get<{ user: User }>("/auth/user"); // endpoint que retorna usuário do token
           setSession({ user: res.data.user });
           localStorage.setItem("auth_user", JSON.stringify(res.data.user));
         } catch {
