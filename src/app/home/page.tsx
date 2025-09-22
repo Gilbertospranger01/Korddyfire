@@ -32,7 +32,7 @@ const Home = () => {
         /*, if (!session) {
           router.push("/signin");
           return;
-        */}
+          }*/
 
 
         const prodRes = await api.get("/products/products");
