@@ -10,7 +10,7 @@ const user = useMemo(() => {
   if (!session?.user) return null;
 
   // Força tipagem do metadata
-  const metadata = session.user.user_metadata as {
+  const metadata = session.user.metadata as {
     name?: string;
     avatar_url?: string;
     birthdate?: string;
