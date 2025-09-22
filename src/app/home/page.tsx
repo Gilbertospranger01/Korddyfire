@@ -29,9 +29,9 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        //if (!session) {
-          //router.push("/signin");
-          /*,return;
+        /*, if (!session) {
+          router.push("/signin");
+          return;
         */}
 
 
@@ -45,7 +45,7 @@ const Home = () => {
     };
 
     fetchData();
-  }, [session, //*router*//]);
+  }, [session, /*,router*/]);
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
