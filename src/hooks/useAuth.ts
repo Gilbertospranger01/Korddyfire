@@ -1,24 +1,39 @@
-// useAuth hook
 import { useState, useEffect } from "react";
+import jwt_decode from "jwt-decode";
 import type { User } from "@/types/types";
 
-// helper para ler cookie
 const getCookie = (name: string) =>
   document.cookie
     .split("; ")
     .find((row) => row.startsWith(name + "="))
     ?.split("=")[1] ?? null;
 
+interface JwtPayload {
+  id: string;
+  iat: number;
+  exp: number;
+  user?: User;
+}
+
 export function useAuth() {
   const [session, setSession] = useState<{ user: User } | null>(null);
 
   useEffect(() => {
-    // aqui pegamos o token e, se existir, assumimos que há sessão
     const token = getCookie("auth_token");
     if (token) {
-      // se precisares de dados do user, podes decodificar JWT ou armazenar user no cookie
-      // para simplicidade, deixamos session como presente se houver token
-      setSession({ user: {} as User }); // placeholder vazio, token existe
+      try {
+        const decoded = jwt_decode<JwtPayload>(token);
+        // se você enviou user dentro do token
+        if (decoded.user) {
+          setSession({ user: decoded.user });
+        } else {
+          // ou buscar do localStorage / cookie
+          setSession({ user: {} as User }); // fallback
+        }
+      } catch (err) {
+        console.error("Erro ao decodificar token", err);
+        setSession(null);
+      }
     } else {
       setSession(null);
     }
