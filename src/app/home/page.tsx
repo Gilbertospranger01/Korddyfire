@@ -31,8 +31,8 @@ const Home = () => {
       try {
         //if (!session) {
           //router.push("/signin");
-          //return;
-        //}
+          /*,return;
+        */}
 
 
         const prodRes = await api.get("/products/products");
