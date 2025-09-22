@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Heart } from "lucide-react";
 import Header from "@/components/header";
 import Loadingpage from "@/loadingpages/loadingpage";
-import { useRouter } from "next/navigation";
+//import { useRouter } from "next/navigation";
 import api from "@/utils/api";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -19,7 +19,7 @@ type Product = {
 };
 
 const Home = () => {
-  const router = useRouter();
+  //const router = useRouter();
   const { session } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,10 +29,10 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        if (!session) {
-          router.push("/signin");
-          return;
-        }
+        //if (!session) {
+          //router.push("/signin");
+          //return;
+        //}
 
 
         const prodRes = await api.get("/products/products");
