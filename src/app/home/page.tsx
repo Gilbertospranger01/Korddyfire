@@ -45,7 +45,7 @@ const Home = () => {
     };
 
     fetchData();
-  }, [session, //router]);
+  }, [session, //*router*//]);
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
