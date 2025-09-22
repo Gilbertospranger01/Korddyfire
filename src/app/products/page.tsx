@@ -31,7 +31,7 @@ function Products() {
   const user = useMemo(() => {
     if (!session?.user) return null;
 
-    const metadata = session.user.user_metadata as UserMetadata;
+    const metadata = session.user.metadata as UserMetadata;
 
     return {
       id: session.user.id,
