@@ -7,17 +7,35 @@ import Header from "@/components/header";
 import Loadingpage from "@/loadingpages/loadingpage";
 import { useRouter } from "next/navigation";
 import api from "@/utils/api";
-import { useAuth } from "@/hooks/useAuth";
 
 type Product = { id: string; name: string; description: string; image?: string; price: number; stock: number; };
+type User = { id: string; name: string; username: string; email: string };
+
+const getCookie = (name: string) =>
+  document.cookie
+    .split("; ")
+    .find((c) => c.startsWith(name + "="))
+    ?.split("=")[1];
 
 const Home = () => {
   const router = useRouter();
-  const { session } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadin, setLoadin] = useState<Record<string, boolean>>({});
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+
+  // Pegar usuário diretamente do cookie/localStorage
+  useEffect(() => {
+    const token = getCookie("auth_token");
+    const storedUser = localStorage.getItem("auth_user");
+
+    if (token && storedUser) {
+      setUser(JSON.parse(storedUser));
+    } else {
+      setUser(null);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -31,7 +49,7 @@ const Home = () => {
       }
     };
     fetchData();
-  }, [session]);
+  }, []);
 
   const toggleFavorite = (id: string) => setFavorites(prev => ({ ...prev, [id]: !prev[id] }));
 
@@ -52,6 +70,7 @@ const Home = () => {
     <div className="bg-white dark:bg-gray-900 min-h-screen w-full overflow-x-hidden">
       <Header />
       <main className="container mx-auto px-4 py-24">
+        {user && <h2 className="text-xl mb-6">Olá, {user.name}!</h2>}
         <h3 className="text-2xl font-bold mb-6 text-center md:text-left">Featured Products</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 overflow-x-hidden">
           {products.map(product => (
@@ -95,7 +114,6 @@ const Home = () => {
           ))}
         </div>
       </main>
-            {/* Footer */}
       <footer className="bg-gray-950 py-4 w-full">
         <div className="text-center text-gray-400 text-sm">
           &copy; 2025 Korddyfire. All rights reserved.
