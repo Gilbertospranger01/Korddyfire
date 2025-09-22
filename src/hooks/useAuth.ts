@@ -8,17 +8,16 @@ const getCookie = (name: string) => {
 };
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<{ user: User } | null>(null);
 
   useEffect(() => {
-    // Pega o usuário do localStorage
     const storedUser = localStorage.getItem("auth_user");
     const token = getCookie("auth_token");
 
     if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
+      setSession({ user: JSON.parse(storedUser) });
     } else {
-      setUser(null);
+      setSession(null);
     }
   }, []);
 
@@ -26,8 +25,8 @@ export function useAuth() {
     document.cookie =
       "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; Secure; SameSite=None";
     localStorage.removeItem("auth_user");
-    setUser(null);
+    setSession(null);
   };
 
-  return { user, logout };
+  return { session, logout };
 }
