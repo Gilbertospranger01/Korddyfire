@@ -67,7 +67,7 @@ const Header = () => {
       setProfilePicture(res.data.picture || null);
     } catch (err) {
       console.error("Erro ao buscar perfil", err);
-      router.push("/signin");
+      //router.push("/signin");
     }
   }, [router]);
 
