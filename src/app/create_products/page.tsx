@@ -2,9 +2,9 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import api from "@/utils/api"; // troca supabase por api
+import api from "@/utils/api";
 import Image from "next/image";
-import Side_Seller_Dashboard from '@/components/sideSellerdashboard';
+import Side_Seller_Dashboard from "@/components/sideSellerdashboard";
 import { FiArrowLeft } from "react-icons/fi";
 import Loadingpage from "@/loadingpages/loadingpage";
 
@@ -19,12 +19,6 @@ interface AuthUser {
   user_metadata?: UserMetadata;
 }
 
-const getCookie = (name: string) =>
-  document.cookie
-    .split("; ")
-    .find((c) => c.startsWith(name + "="))
-    ?.split("=")[1];
-
 const Create_Products = () => {
   const router = useRouter();
   const [product, setProduct] = useState({
@@ -35,7 +29,7 @@ const Create_Products = () => {
     stock: "",
     category: "",
     description: "",
-    image: ""
+    image: "",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -43,14 +37,10 @@ const Create_Products = () => {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
 
-  // Pega usuário diretamente do cookie/localStorage
+  // Recupera usuário salvo no localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem("auth_user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    } else {
-      setUser(null);
-    }
+    setUser(storedUser ? JSON.parse(storedUser) : null);
   }, []);
 
   const memoUser = useMemo(() => {
@@ -63,8 +53,10 @@ const Create_Products = () => {
     };
   }, [user]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    if (e.target.name === "seller_name") return; // prevenir edição manual
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    if (e.target.name === "seller_name") return;
     setProduct({ ...product, [e.target.name]: e.target.value });
   };
 
@@ -73,6 +65,13 @@ const Create_Products = () => {
     if (file) {
       setImageFile(file);
       setPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleDigitalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setDigitalFile(file);
     }
   };
 
@@ -87,31 +86,29 @@ const Create_Products = () => {
     }
 
     try {
-      // Upload da imagem, se houver
+      // Upload imagem
       let imageUrl = product.image;
       if (imageFile) {
         const formData = new FormData();
         formData.append("file", imageFile);
-
         const uploadImageResp = await api.post("/upload/image", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         imageUrl = uploadImageResp.data.url;
       }
 
-      // Upload do produto digital, se houver
+      // Upload digital
       let digitalUrl = "";
       if (digitalFile) {
         const formData = new FormData();
         formData.append("file", digitalFile);
-
         const uploadDigitalResp = await api.post("/upload/digital", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         digitalUrl = uploadDigitalResp.data.url;
       }
 
-      // Criar produto
+      // Payload final
       const payload = {
         ...product,
         image: imageUrl,
@@ -141,16 +138,17 @@ const Create_Products = () => {
     }
   }, [memoUser]);
 
-  if (!memoUser) {
-    return <Loadingpage />;
-  }
+  if (!memoUser) return <Loadingpage />;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white overflow-hidden">
-      {/* Header fixo no topo */}
-      <header className="flex fixed w-full justify-between z-99 items-center p-4 bg-gray-800 shadow-md border-b border-gray-400">
+      {/* Header */}
+      <header className="flex fixed w-full justify-between items-center p-4 bg-gray-800 shadow-md border-b border-gray-400">
         <div className="flex items-center">
-          <button onClick={() => router.push('/home')} className='text-gray-400 hover:text-white transition cursor-pointer'>
+          <button
+            onClick={() => router.push("/home")}
+            className="text-gray-400 hover:text-white transition cursor-pointer"
+          >
             <FiArrowLeft size={24} />
           </button>
           <div className="text-2xl font-bold pl-8">Korddyfire</div>
@@ -173,11 +171,16 @@ const Create_Products = () => {
 
       <div className="flex w-full">
         <Side_Seller_Dashboard />
-        {/* Main content */}
         <main className="flex-1 mt-20 ml-60 px-8 py-6">
-          <h1 className="text-4xl text-center font-bold mb-10 text-green-500">Create New Product</h1>
+          <h1 className="text-4xl text-center font-bold mb-10 text-green-500">
+            Create New Product
+          </h1>
 
-          <form onSubmit={handleSubmit} className="p-8 rounded-2xl max-w-5xl mx-auto space-y-8">
+          <form
+            onSubmit={handleSubmit}
+            className="p-8 rounded-2xl max-w-5xl mx-auto space-y-8 bg-gray-800"
+          >
+            {/* Seller Name */}
             <div>
               <label className="block text-gray-300 mb-2">Seller Name</label>
               <input
@@ -185,11 +188,115 @@ const Create_Products = () => {
                 name="seller_name"
                 value={product.seller_name}
                 readOnly
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none text-gray-400 cursor-not-allowed"
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-400 cursor-not-allowed"
               />
             </div>
-            {/* restante do form exatamente como estava */}
-            {/* ... grid de inputs, uploads de imagem e produto digital, botão de submit ... */}
+
+            {/* Product Name */}
+            <div>
+              <label className="block text-gray-300 mb-2">Product Name</label>
+              <input
+                type="text"
+                name="name"
+                value={product.name}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md"
+              />
+            </div>
+
+            {/* Price */}
+            <div>
+              <label className="block text-gray-300 mb-2">Price</label>
+              <input
+                type="number"
+                name="price"
+                value={product.price}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md"
+              />
+            </div>
+
+            {/* Stock */}
+            <div>
+              <label className="block text-gray-300 mb-2">Stock</label>
+              <input
+                type="text"
+                name="stock"
+                value={product.stock}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md"
+              />
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="block text-gray-300 mb-2">Category</label>
+              <input
+                type="text"
+                name="category"
+                value={product.category}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-gray-300 mb-2">Description</label>
+              <textarea
+                name="description"
+                value={product.description}
+                onChange={handleChange}
+                rows={4}
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md"
+              />
+            </div>
+
+            {/* Upload Image */}
+            <div>
+              <label className="block text-gray-300 mb-2">Product Image</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="w-full text-gray-200"
+              />
+              {preview && (
+                <div className="mt-4">
+                  <Image
+                    src={preview}
+                    alt="Preview"
+                    width={200}
+                    height={200}
+                    className="rounded-lg"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Upload Digital File */}
+            <div>
+              <label className="block text-gray-300 mb-2">Digital File</label>
+              <input
+                type="file"
+                accept=".pdf,.zip,.rar"
+                onChange={handleDigitalChange}
+                className="w-full text-gray-200"
+              />
+            </div>
+
+            {/* Submit */}
+            <div className="flex justify-center">
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-xl font-semibold text-white transition disabled:opacity-50"
+              >
+                {loading ? "Creating..." : "Create Product"}
+              </button>
+            </div>
           </form>
         </main>
       </div>
