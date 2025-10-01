@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/utils/api";
 import Image from "next/image";
@@ -8,19 +8,18 @@ import Side_Seller_Dashboard from "@/components/sideSellerdashboard";
 import { FiArrowLeft } from "react-icons/fi";
 import Loadingpage from "@/loadingpages/loadingpage";
 
-interface UserMetadata {
-  name?: string;
-  avatar_url?: string;
-  user_id?: string;
-}
-
-interface AuthUser {
+interface User {
   id: string;
-  user_metadata?: UserMetadata;
+  name: string;
+  username?: string;
+  email?: string;
+  avatar_url?: string | null;
+  user_id?: string;
 }
 
 const Create_Products = () => {
   const router = useRouter();
+
   const [product, setProduct] = useState({
     seller_id: "",
     seller_name: "",
@@ -31,27 +30,33 @@ const Create_Products = () => {
     description: "",
     image: "",
   });
+
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [digitalFile, setDigitalFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
-  // Recupera usuário salvo no localStorage
+  // Recupera usuário salvo no localStorage e normaliza
   useEffect(() => {
     const storedUser = localStorage.getItem("auth_user");
-    setUser(storedUser ? JSON.parse(storedUser) : null);
-  }, []);
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
 
-  const memoUser = useMemo(() => {
-    if (!user) return null;
-    return {
-      id: user.id,
-      name: user.user_metadata?.name || "User",
-      picture: user.user_metadata?.avatar_url || null,
-      user_metadata: user.user_metadata,
-    };
-  }, [user]);
+      const normalizedUser: User = {
+        id: parsed.id,
+        name: parsed.name || parsed.user_metadata?.name || "User",
+        username: parsed.username || "",
+        email: parsed.email || "",
+        avatar_url: parsed.avatar_url || parsed.user_metadata?.avatar_url || null,
+        user_id: parsed.user_metadata?.user_id || parsed.user_id || "",
+      };
+
+      setUser(normalizedUser);
+    } else {
+      setUser(null);
+    }
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -70,16 +75,14 @@ const Create_Products = () => {
 
   const handleDigitalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setDigitalFile(file);
-    }
+    if (file) setDigitalFile(file);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
-    if (!memoUser) {
+    if (!user) {
       console.error("Usuário não autenticado!");
       setLoading(false);
       return;
@@ -113,9 +116,9 @@ const Create_Products = () => {
         ...product,
         image: imageUrl,
         digital_product: digitalUrl,
-        user_id: memoUser.id,
-        seller_id: memoUser.user_metadata?.user_id || "not have",
-        seller_name: memoUser.name,
+        user_id: user.id,
+        seller_id: user.user_id || "not have",
+        seller_name: user.name,
       };
 
       const createResp = await api.post("/products", payload);
@@ -132,13 +135,14 @@ const Create_Products = () => {
     }
   };
 
+  // Preenche seller_name automaticamente
   useEffect(() => {
-    if (memoUser) {
-      setProduct((prev) => ({ ...prev, seller_name: memoUser.name }));
+    if (user) {
+      setProduct((prev) => ({ ...prev, seller_name: user.name }));
     }
-  }, [memoUser]);
+  }, [user]);
 
-  if (!memoUser) return <Loadingpage />;
+  if (!user) return <Loadingpage />;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white overflow-hidden">
@@ -153,20 +157,18 @@ const Create_Products = () => {
           </button>
           <div className="text-2xl font-bold pl-8">Korddyfire</div>
         </div>
-        {memoUser && (
-          <div className="flex items-center gap-3">
-            <span className="text-sm">{memoUser.name}</span>
-            {memoUser.picture && (
-              <Image
-                src={memoUser.picture}
-                alt="User Avatar"
-                width={40}
-                height={40}
-                className="rounded-full"
-              />
-            )}
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          <span className="text-sm">{user.name}</span>
+          {user.avatar_url && (
+            <Image
+              src={user.avatar_url}
+              alt="User Avatar"
+              width={40}
+              height={40}
+              className="rounded-full"
+            />
+          )}
+        </div>
       </header>
 
       <div className="flex w-full">
