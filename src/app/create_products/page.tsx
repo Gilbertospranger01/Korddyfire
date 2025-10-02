@@ -94,7 +94,7 @@ const Create_Products = () => {
       if (imageFile) {
         const formData = new FormData();
         formData.append("file", imageFile);
-        const uploadImageResp = await api.post("/upload/image", formData, {
+        const uploadImageResp = await api.post("/upload/uploads/", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         imageUrl = uploadImageResp.data.url;
