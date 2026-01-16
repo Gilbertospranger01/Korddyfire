@@ -1,5 +1,3 @@
-Corrige tudo devolve como Imlinkey não Imlinkedy  
-  
 "use client";  
   
 import React, { useEffect, useState } from "react";  
