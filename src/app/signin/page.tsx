@@ -42,7 +42,7 @@ type FormData = {
   password: string;
 };
 
-type Provider = "google" | "facebook" | "github" | "imlinkedy";
+type Provider = "google" | "facebook" | "github" | "imlinkey";
 
 export default function Signin() {
   const router = useRouter();
@@ -87,7 +87,7 @@ const handleSignIn = async (e: React.FormEvent) => {
     // grava token em cookie
     setCookie("auth_token", data.token, 2);
       localStorage.setItem("auth_user", JSON.stringify(data.user));
-    setTimeout(() => router.replace("/home"), 800);
+    setTimeout(() => router.replace("/home"));
   } catch (err) {
     const axiosErr = err as AxiosError<BackendErrorResponse>;
     const msg =
@@ -242,7 +242,7 @@ setError(msg);
                 aria-busy={loadingProvider === "imlinkedy"}
               >
                 <Image
-                  src="https://imlinked.vercel.app/favicon.png"
+                  src="https://imlinkey.store/favicon.png"
                   alt="Imlinkedy"
                   fill
                   className="object-cover"
@@ -259,7 +259,7 @@ setError(msg);
               {/* Korddy Fire (imagem local) */}
               <button
                 type="button"
-                onClick={() => window.open("https://korddyfire.vercel.app", "_blank")}
+                onClick={() => window.open("https://korddyfire.imlinkey.store", "_blank")}
                 className="flex items-center justify-center w-12 h-12 rounded-xl border border-gray-300 hover:bg-gray-100 transition shadow-sm bg-white"
               >
                 <Image
@@ -274,11 +274,11 @@ setError(msg);
               {/* Imlinkedy (imagem via link) */}
               <button
                 type="button"
-                onClick={() => window.open("https://imlinked.vercel.app", "_blank")}
+                onClick={() => window.open("https://imlinkey.store", "_blank")}
                 className="flex items-center justify-center w-12 h-12 rounded-xl border border-gray-300 hover:bg-gray-100 transition shadow-sm bg-white"
               >
                 <Image
-                  src="https://imlinked.vercel.app/favicon.png"
+                  src="https://imlinkey.store/favicon.png"
                   alt="Imlinkedy"
                   width={24}
                   height={24}
