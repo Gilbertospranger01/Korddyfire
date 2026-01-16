@@ -8,6 +8,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  TooltipProps,
 } from "recharts";
 import { useState, useEffect, useCallback } from "react";
 import api from "@/utils/api";
@@ -110,12 +111,30 @@ const Graph = () => {
     };
   }, [fetchData]);
 
-  const formatNumber = (value: number): string => {
+  const formatNumber = (value?: number): string => {
+    if (!value && value !== 0) return "";
     if (value >= 1_000_000_000_000) return (value / 1_000_000_000_000).toFixed(1) + "T";
     if (value >= 1_000_000_000) return (value / 1_000_000_000).toFixed(1) + "B";
     if (value >= 1_000_000) return (value / 1_000_000).toFixed(1) + "M";
     if (value >= 1_000) return (value / 1_000).toFixed(1) + "K";
     return value.toString();
+  };
+
+  // Função customizada para o Tooltip
+  const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-gray-800 p-4 border border-gray-700 rounded-lg shadow-lg">
+          <p className="text-white font-semibold">{label}</p>
+          {payload.map((entry, index) => (
+            <p key={index} className="text-white" style={{ color: entry.color }}>
+              {entry.name}: {formatNumber(entry.value)}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -137,10 +156,10 @@ const Graph = () => {
             <XAxis dataKey="name" stroke="#e5e5e5" />
             <YAxis stroke="#e5e5e5" tickFormatter={formatNumber} />
             <Tooltip
+              content={CustomTooltip}
               contentStyle={{ backgroundColor: "#1f2937", border: "none" }}
               labelStyle={{ color: "#fff" }}
               cursor={{ fill: "#374151" }}
-              formatter={(value: number) => [formatNumber(value), ""]}
             />
             <Area type="monotone" dataKey="sales" stroke="#2563eb" fillOpacity={1} fill="url(#colorSales)" name="Sales" />
             <Area type="monotone" dataKey="purchases" stroke="#16a34a" fillOpacity={1} fill="url(#colorPurchases)" name="Purchases" />
