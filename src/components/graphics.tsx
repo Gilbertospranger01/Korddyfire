@@ -8,7 +8,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  TooltipProps,
 } from "recharts";
 import { useState, useEffect, useCallback } from "react";
 import api from "@/utils/api";
@@ -35,6 +34,18 @@ type Purchase = {
 const socket = io("http://localhost:3500");
 
 const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+// Interface para o CustomTooltip
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    value?: number;
+    name?: string;
+    color?: string;
+    payload?: CombinedData;
+  }>;
+  label?: string;
+}
 
 const Graph = () => {
   const [data, setData] = useState<CombinedData[]>([]);
@@ -120,8 +131,8 @@ const Graph = () => {
     return value.toString();
   };
 
-  // Função customizada para o Tooltip
-  const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+  // Função customizada para o Tooltip com tipagem correta
+  const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-gray-800 p-4 border border-gray-700 rounded-lg shadow-lg">
@@ -135,6 +146,12 @@ const Graph = () => {
       );
     }
     return null;
+  };
+
+  // Função para o formatter do Tooltip (maneira alternativa mais simples)
+  const tooltipFormatter = (value?: number | string) => {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    return formatNumber(numValue);
   };
 
   return (
@@ -156,10 +173,12 @@ const Graph = () => {
             <XAxis dataKey="name" stroke="#e5e5e5" />
             <YAxis stroke="#e5e5e5" tickFormatter={formatNumber} />
             <Tooltip
-              content={CustomTooltip}
+              content={<CustomTooltip />}
               contentStyle={{ backgroundColor: "#1f2937", border: "none" }}
               labelStyle={{ color: "#fff" }}
               cursor={{ fill: "#374151" }}
+              // Formatter usando a nova função (opcional - remove se usar apenas o CustomTooltip)
+              formatter={(value: number | string) => [tooltipFormatter(value), ""]}
             />
             <Area type="monotone" dataKey="sales" stroke="#2563eb" fillOpacity={1} fill="url(#colorSales)" name="Sales" />
             <Area type="monotone" dataKey="purchases" stroke="#16a34a" fillOpacity={1} fill="url(#colorPurchases)" name="Purchases" />
