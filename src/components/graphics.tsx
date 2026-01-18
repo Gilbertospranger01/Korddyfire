@@ -9,10 +9,13 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { useState, useEffect, useCallback } from "react";
-import api from "@/utils/api";
+import { useEffect, useState, useCallback } from "react";
 import { io } from "socket.io-client";
+import api from "@/utils/api";
 
+/* =======================
+   Types
+======================= */
 type CombinedData = {
   name: string;
   sales: number;
@@ -31,163 +34,140 @@ type Purchase = {
   amount: number;
 };
 
-const socket = io("http://localhost:3500");
+/* =======================
+   Utils
+======================= */
+const socketUrl =
+  process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3500";
 
-const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const formatNumber = (value?: number): string => {
+  if (value === undefined) return "0";
+  if (value >= 1e12) return (value / 1e12).toFixed(1) + "T";
+  if (value >= 1e9) return (value / 1e9).toFixed(1) + "B";
+  if (value >= 1e6) return (value / 1e6).toFixed(1) + "M";
+  if (value >= 1e3) return (value / 1e3).toFixed(1) + "K";
+  return value.toString();
+};
 
-// Interface para o CustomTooltip
-interface CustomTooltipProps {
+/* =======================
+   Tooltip
+======================= */
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+}: {
   active?: boolean;
-  payload?: Array<{
-    value?: number;
-    name?: string;
-    color?: string;
-    payload?: CombinedData;
-  }>;
+  payload?: any[];
   label?: string;
-}
+}) => {
+  if (!active || !payload?.length) return null;
 
+  return (
+    <div className="bg-gray-900 border border-gray-700 rounded-lg p-3 shadow-xl">
+      <p className="text-white font-semibold mb-1">{label}</p>
+      {payload.map((item, i) => (
+        <p key={i} style={{ color: item.color }}>
+          {item.name}: {formatNumber(item.value)}
+        </p>
+      ))}
+    </div>
+  );
+};
+
+/* =======================
+   Component
+======================= */
 const Graph = () => {
   const [data, setData] = useState<CombinedData[]>([]);
 
-  const generateDailyData = useCallback((): CombinedData[] => {
-    const today = new Date();
-    const weekday = today.getDay();
-
-    return daysOfWeek.map((day, index) => ({
-      name: index === weekday ? "Today" : day,
-      sales: 0,
-      purchases: 0,
-    }));
-  }, []);
-
   const fetchData = useCallback(async () => {
-    try {
-      const [salesRes, purchasesRes] = await Promise.all([
-        api.get<Sale[]>("/sales"),
-        api.get<Purchase[]>("/purchasing"),
-      ]);
+    const [salesRes, purchasesRes] = await Promise.all([
+      api.get<Sale[]>("/sales"),
+      api.get<Purchase[]>("/purchasing"),
+    ]);
 
-      const salesMap = new Map<string, number>();
-      const purchasesMap = new Map<string, number>();
+    const salesMap = new Map<string, number>();
+    const purchasesMap = new Map<string, number>();
 
-      salesRes.data.forEach((sale) => {
-        const key = `${sale.month}/${sale.year}`;
-        salesMap.set(key, (salesMap.get(key) || 0) + sale.price);
+    salesRes.data.forEach(({ month, year, price }) => {
+      const key = `${month}-${year}`;
+      salesMap.set(key, (salesMap.get(key) || 0) + price);
+    });
+
+    purchasesRes.data.forEach(({ month, year, amount }) => {
+      const key = `${month}-${year}`;
+      purchasesMap.set(key, (purchasesMap.get(key) || 0) + amount);
+    });
+
+    const now = new Date();
+    const result: CombinedData[] = [];
+
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+      const key = `${month}-${year}`;
+
+      result.push({
+        name: date.toLocaleString("en-US", { month: "short" }) + `/${year}`,
+        sales: salesMap.get(key) || 0,
+        purchases: purchasesMap.get(key) || 0,
       });
-
-      purchasesRes.data.forEach((purchase) => {
-        const key = `${purchase.month}/${purchase.year}`;
-        purchasesMap.set(key, (purchasesMap.get(key) || 0) + purchase.amount);
-      });
-
-      const today = new Date();
-      const currentMonth = today.getMonth() + 1;
-      const currentYear = today.getFullYear();
-
-      const lastSixMonths: string[] = [];
-      for (let i = 0; i < 6; i++) {
-        let month = currentMonth - i;
-        let year = currentYear;
-        if (month <= 0) {
-          month += 12;
-          year -= 1;
-        }
-        lastSixMonths.unshift(`${month}/${year}`);
-      }
-
-      const combinedData = lastSixMonths.map((key) => {
-        const [month, year] = key.split("/").map(Number);
-        const monthName = new Date(year, month - 1).toLocaleString("default", { month: "short" });
-        return {
-          name: `${monthName}/${year}`,
-          sales: salesMap.get(key) || 0,
-          purchases: purchasesMap.get(key) || 0,
-        };
-      });
-
-      setData(combinedData.some((d) => d.sales || d.purchases) ? combinedData : generateDailyData());
-    } catch (error) {
-      console.error("Erro ao buscar dados:", error);
-      setData(generateDailyData());
     }
-  }, [generateDailyData]);
+
+    setData(result);
+  }, []);
 
   useEffect(() => {
     fetchData();
+
+    const socket = io(socketUrl);
     socket.on("update-graph", fetchData);
 
     return () => {
-      socket.off("update-graph", fetchData);
+      socket.disconnect();
     };
   }, [fetchData]);
 
-  const formatNumber = (value?: number): string => {
-    if (!value && value !== 0) return "";
-    if (value >= 1_000_000_000_000) return (value / 1_000_000_000_000).toFixed(1) + "T";
-    if (value >= 1_000_000_000) return (value / 1_000_000_000).toFixed(1) + "B";
-    if (value >= 1_000_000) return (value / 1_000_000).toFixed(1) + "M";
-    if (value >= 1_000) return (value / 1_000).toFixed(1) + "K";
-    return value.toString();
-  };
-
-  // Função customizada para o Tooltip com tipagem correta
-  const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-gray-800 p-4 border border-gray-700 rounded-lg shadow-lg">
-          <p className="text-white font-semibold">{label}</p>
-          {payload.map((entry, index) => (
-            <p key={index} className="text-white" style={{ color: entry.color }}>
-              {entry.name}: {formatNumber(entry.value)}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-
-  // Função para o formatter do Tooltip (maneira alternativa mais simples)
-  const tooltipFormatter = (value?: number | string) => {
-    const numValue = typeof value === 'string' ? parseFloat(value) : value;
-    return formatNumber(numValue);
-  };
-
   return (
-    <div className="w-full h-100 pr-10 pb-16 pt-20 rounded-xl shadow-xl bg-gray-950 text-white">
+    <div className="w-full h-[400px] bg-gray-950 rounded-xl shadow-xl p-6">
       <ResponsiveContainer width="100%" height="100%">
-        {data.length ? (
-          <AreaChart data={data}>
-            <defs>
-              <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#2563eb" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="colorPurchases" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#16a34a" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#2d2d2d" />
-            <XAxis dataKey="name" stroke="#e5e5e5" />
-            <YAxis stroke="#e5e5e5" tickFormatter={formatNumber} />
-            <Tooltip
-              content={<CustomTooltip />}
-              contentStyle={{ backgroundColor: "#1f2937", border: "none" }}
-              labelStyle={{ color: "#fff" }}
-              cursor={{ fill: "#374151" }}
-              // Formatter usando a nova função (opcional - remove se usar apenas o CustomTooltip)
-              formatter={(value: number | string) => [tooltipFormatter(value), ""]}
-            />
-            <Area type="monotone" dataKey="sales" stroke="#2563eb" fillOpacity={1} fill="url(#colorSales)" name="Sales" />
-            <Area type="monotone" dataKey="purchases" stroke="#16a34a" fillOpacity={1} fill="url(#colorPurchases)" name="Purchases" />
-          </AreaChart>
-        ) : (
-          <div className="w-full h-full flex justify-center items-center text-gray-500">
-            No data to display
-          </div>
-        )}
+        <AreaChart data={data}>
+          <defs>
+            <linearGradient id="sales" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#2563eb" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="purchases" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#16a34a" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+
+          <CartesianGrid strokeDasharray="3 3" stroke="#2d2d2d" />
+          <XAxis dataKey="name" stroke="#e5e5e5" />
+          <YAxis tickFormatter={formatNumber} stroke="#e5e5e5" />
+
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: "#374151" }} />
+
+          <Area
+            type="monotone"
+            dataKey="sales"
+            stroke="#2563eb"
+            fill="url(#sales)"
+            animationDuration={800}
+            name="Sales"
+          />
+          <Area
+            type="monotone"
+            dataKey="purchases"
+            stroke="#16a34a"
+            fill="url(#purchases)"
+            animationDuration={800}
+            name="Purchases"
+          />
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );
