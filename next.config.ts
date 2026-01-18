@@ -2,8 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ["imlinked.vercel.app"],
     remotePatterns: [
+      { protocol: "https", hostname: "imlinked.vercel.app" },
       { protocol: "https", hostname: "pbs.twimg.com" },
       { protocol: "https", hostname: "i.pinimg.com" },
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
