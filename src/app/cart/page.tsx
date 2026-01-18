@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import { Card, CardHeader, CardBody, CardFooter, Button } from "@nextui-org/react";
 import { ShoppingCart, Trash2 } from "lucide-react";
