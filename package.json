@@ -10,8 +10,8 @@
     "server": "nodemon"
   },
   "dependencies": {
+    "@heroui/react": "^2.8.7",
     "@hookform/resolvers": "^5.2.2",
-    "@nextui-org/react": "^2.6.11",
     "@stripe/react-stripe-js": "^5.4.1",
     "@stripe/stripe-js": "^8.6.1",
     "@supabase/ssr": "^0.8.0",
