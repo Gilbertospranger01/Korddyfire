@@ -52,7 +52,7 @@ export default function Chat() {
   // Busca usuários pela API RESTful
   const fetchUsers = useCallback(async () => {
   try {
-    const res = await api.get('/profiles', {
+    const res = await api.get('/auth/user', {
       params: { username: search } // envia query correta pro backend
     });
     const data = res.data as User[];
