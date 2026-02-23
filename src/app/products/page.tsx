@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import api from "@/utils/api"; // substitui supabase por api
+import api from "@/utils/api"; 
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import Side_Seller_Dashboard from "@/components/sideSellerdashboard";
@@ -8,12 +8,14 @@ import { FiArrowLeft } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import Loadingpage from "@/loadingpages/loadingpage";
 
+// 1. Tipagem fiel ao seu Sequelize Model
 type Product = {
-  id: string;
-  image: string;
-  name: string;
-  description: string;
-  price: number;
+  product_id: string;      // UUID
+  product_image: string;   // URL da imagem
+  product_name: string;
+  product_description: string;
+  product_price: number;
+  product_stock: number;
 };
 
 type UserMetadata = {
@@ -22,55 +24,54 @@ type UserMetadata = {
 };
 
 function Products() {
-  const [product, setProduct] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
   const { session } = useAuth();
   const router = useRouter();
 
+  // 2. Extração limpa dos dados do usuário
   const user = useMemo(() => {
     if (!session?.user) return null;
-
     const metadata = session.user.metadata as UserMetadata;
 
     return {
-      id: session.user.id,
-      name: metadata?.name || "User",
+      id: session.user.id, // Este é o UUID do usuário
+      name: metadata?.name || "Usuário",
       picture: metadata?.avatar_url || null,
     };
   }, [session]);
 
   useEffect(() => {
-    if (session?.user?.id) {
-      setUserId(session.user.id);
-    }
-  }, [session]);
+    // Só busca se tivermos o ID do usuário (vendedor)
+    if (!user?.id) return;
 
-  useEffect(() => {
-    if (!userId) return;
-
-    async function fetchProduct() {
+    async function fetchProducts() {
       setLoading(true);
       try {
-        const response = await api.get(`products?user_id=${userId}`);
-        setProduct(response.data);
+        /**
+         * 3. Filtro por Vendedor:
+         * No seu Model, a FK é 'seller_id'. Passamos ela na query string.
+         */
+        const response = await api.get(`products?seller_id=${user.id}`);
+        
+        // Garantindo que estamos lidando com um array
+        const data = Array.isArray(response.data) ? response.data : response.data.products || [];
+        setProducts(data);
       } catch (error) {
-        console.error("Erro ao buscar produtos:", error);
-        setProduct([]);
+        console.error("Erro ao buscar produtos do vendedor:", error);
+        setProducts([]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
 
-    fetchProduct();
-  }, [userId]);
+    fetchProducts();
+  }, [user?.id]);
 
-  if (!session) {
-    return <Loadingpage />;
-  }
+  if (!session) return <Loadingpage />;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white overflow-hidden">
-      {/* Header fixo no topo */}
       <header className="flex fixed w-full justify-between z-50 items-center p-4 bg-gray-800 shadow-md border-b border-gray-400">
         <div className="flex items-center">
           <button
@@ -83,15 +84,19 @@ function Products() {
         </div>
         {user && (
           <div className="flex items-center gap-3">
-            <span className="text-sm">{user.name}</span>
-            {user.picture && (
+            <span className="text-sm font-medium">{user.name}</span>
+            {user.picture ? (
               <Image
                 src={user.picture}
-                alt="User Avatar"
+                alt="Avatar"
                 width={40}
                 height={40}
-                className="rounded-full"
+                className="rounded-full border border-green-500"
               />
+            ) : (
+              <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-xs">
+                {user.name.charAt(0)}
+              </div>
             )}
           </div>
         )}
@@ -100,41 +105,58 @@ function Products() {
       <div className="flex w-full">
         <Side_Seller_Dashboard />
 
-        {/* Main content */}
-        <main className="flex-1 p-4 mt-20 ml-60">
-          <h1 className="text-2xl font-bold text-center mb-6">
-            Meus Produtos
-          </h1>
+        <main className="flex-1 p-8 mt-20 ml-60">
+          <div className="flex justify-between items-center mb-10">
+            <h1 className="text-3xl font-black text-green-500">Meus Produtos à Venda</h1>
+            <button 
+              onClick={() => router.push('/create-products')}
+              className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold transition"
+            >
+              + Novo Produto
+            </button>
+          </div>
 
           {loading ? (
-            <p className="text-center text-gray-400">Carregando...</p>
-          ) : product.length === 0 ? (
-            <p className="text-center text-red-500">
-              Nenhum produto encontrado.
-            </p>
+            <div className="flex justify-center mt-20"><Loadingpage /></div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-20 bg-gray-800 rounded-3xl border border-dashed border-gray-600">
+              <p className="text-gray-400 text-xl">Você ainda não cadastrou produtos.</p>
+            </div>
           ) : (
-            <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {product.map((product) => (
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {products.map((p) => (
                 <li
-                  key={product.id}
-                  className="bg-gray-700 p-4 rounded-lg shadow-lg"
+                  key={p.product_id}
+                  className="bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden shadow-xl hover:border-green-500/50 transition-all group"
                 >
-                  <Image
-                    src={product.image || "/placeholder.jpg"}
-                    width={200}
-                    height={200}
-                    priority
-                    alt={product.name}
-                    className="rounded-lg object-cover w-full h-40"
-                  />
-                  <h2 className="text-xl mt-2">{product.name}</h2>
-                  <p className="text-gray-400">{product.description}</p>
-                  <p className="text-yellow-400">
-                    {new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: "USD",
-                    }).format(product.price)}
-                  </p>
+                  <div className="relative h-48 w-full">
+                    <Image
+                      src={p.product_image || "/placeholder.jpg"}
+                      fill
+                      alt={p.product_name}
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="p-5">
+                    <h2 className="text-xl font-bold truncate mb-1">{p.product_name}</h2>
+                    <p className="text-gray-400 text-sm line-clamp-2 mb-4 h-10">
+                      {p.product_description}
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-green-500 font-black text-lg">
+                        ${p.product_price.toFixed(2)}
+                      </span>
+                      <span className="text-xs bg-gray-700 px-2 py-1 rounded text-gray-300">
+                        Estoque: {p.product_stock}
+                      </span>
+                    </div>
+                    <button 
+                      onClick={() => router.push(`/details?id=${p.product_id}`)}
+                      className="w-full mt-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-bold transition"
+                    >
+                      Editar / Detalhes
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
