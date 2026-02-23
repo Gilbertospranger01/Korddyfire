@@ -113,7 +113,7 @@ function Products() {
           <div className="flex justify-between items-center mb-10">
             <h1 className="text-3xl font-black text-green-500">Meus Produtos</h1>
             <button 
-              onClick={() => router.push('/create-products')}
+              onClick={() => router.push('/create_products')}
               className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold transition"
             >
               + Novo Produto
