@@ -8,10 +8,10 @@ import { FiArrowLeft } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import Loadingpage from "@/loadingpages/loadingpage";
 
-// 1. Tipagem fiel ao seu Sequelize Model
+// Tipagem fiel ao seu Sequelize Model
 type Product = {
-  product_id: string;      // UUID
-  product_image: string;   // URL da imagem
+  product_id: string;
+  product_image: string;
   product_name: string;
   product_description: string;
   product_price: number;
@@ -29,33 +29,37 @@ function Products() {
   const { session } = useAuth();
   const router = useRouter();
 
-  // 2. Extração limpa dos dados do usuário
+  // Extração segura dos dados do usuário
   const user = useMemo(() => {
     if (!session?.user) return null;
     const metadata = session.user.metadata as UserMetadata;
 
     return {
-      id: session.user.id, // Este é o UUID do usuário
+      id: session.user.id,
       name: metadata?.name || "Usuário",
       picture: metadata?.avatar_url || null,
     };
   }, [session]);
 
   useEffect(() => {
-    // Só busca se tivermos o ID do usuário (vendedor)
-    if (!user?.id) return;
+    // Verificação de segurança: Só dispara a busca se o 'user' e 'user.id' existirem
+    if (!user?.id) {
+      if (!session) setLoading(true); // Mantém loading se a sessão ainda estiver carregando
+      return;
+    }
 
     async function fetchProducts() {
       setLoading(true);
       try {
-        /**
-         * 3. Filtro por Vendedor:
-         * No seu Model, a FK é 'seller_id'. Passamos ela na query string.
-         */
-        const response = await api.get(`products?seller_id=${user.id}`);
+        // Correção do erro de Build: Usando template literal seguro ou params
+        const response = await api.get(`products`, {
+          params: { seller_id: user?.id } // Forma mais limpa de passar query params
+        });
         
-        // Garantindo que estamos lidando com um array
-        const data = Array.isArray(response.data) ? response.data : response.data.products || [];
+        const data = Array.isArray(response.data) 
+          ? response.data 
+          : (response.data?.products || []);
+          
         setProducts(data);
       } catch (error) {
         console.error("Erro ao buscar produtos do vendedor:", error);
@@ -66,7 +70,7 @@ function Products() {
     }
 
     fetchProducts();
-  }, [user?.id]);
+  }, [user?.id, session]); // Adicionado session como dependência
 
   if (!session) return <Loadingpage />;
 
@@ -107,7 +111,7 @@ function Products() {
 
         <main className="flex-1 p-8 mt-20 ml-60">
           <div className="flex justify-between items-center mb-10">
-            <h1 className="text-3xl font-black text-green-500">Meus Produtos à Venda</h1>
+            <h1 className="text-3xl font-black text-green-500">Meus Produtos</h1>
             <button 
               onClick={() => router.push('/create-products')}
               className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold transition"
@@ -117,10 +121,10 @@ function Products() {
           </div>
 
           {loading ? (
-            <div className="flex justify-center mt-20"><Loadingpage /></div>
+            <div className="flex justify-center mt-20 text-gray-400">Carregando seus produtos...</div>
           ) : products.length === 0 ? (
             <div className="text-center py-20 bg-gray-800 rounded-3xl border border-dashed border-gray-600">
-              <p className="text-gray-400 text-xl">Você ainda não cadastrou produtos.</p>
+              <p className="text-gray-400 text-xl">Nenhum produto cadastrado.</p>
             </div>
           ) : (
             <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -144,18 +148,12 @@ function Products() {
                     </p>
                     <div className="flex justify-between items-center">
                       <span className="text-green-500 font-black text-lg">
-                        ${p.product_price.toFixed(2)}
+                        ${p.product_price}
                       </span>
                       <span className="text-xs bg-gray-700 px-2 py-1 rounded text-gray-300">
                         Estoque: {p.product_stock}
                       </span>
                     </div>
-                    <button 
-                      onClick={() => router.push(`/details?id=${p.product_id}`)}
-                      className="w-full mt-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-bold transition"
-                    >
-                      Editar / Detalhes
-                    </button>
                   </div>
                 </li>
               ))}
