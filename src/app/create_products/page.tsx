@@ -6,7 +6,7 @@ import api from "@/utils/api";
 import Image from "next/image";
 import Side_Seller_Dashboard from "@/components/sideSellerdashboard";
 import Toast from "@/components/toast";
-import { useToast } from "@/hooks/useToast"; // hook que criamos antes
+import { useToast } from "@/hooks/useToast";
 import { FiArrowLeft } from "react-icons/fi";
 import Loadingpage from "@/loadingpages/loadingpage";
 
@@ -26,13 +26,15 @@ const Create_Products = () => {
   const [product, setProduct] = useState({
     seller_id: "",
     seller_name: "",
-    name: "",
-    price: 0,
-    stock: "",
-    category: "",
-    description: "",
-    image: "",
+    product_name: "",
+    product_price: 0,
+    product_stock: "",
+    product_category: "",
+    product_description: "",
+    product_image: "",
+    product_content: "",
   });
+
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [digitalFile, setDigitalFile] = useState<File | null>(null);
@@ -55,9 +57,9 @@ const Create_Products = () => {
     }
   }, []);
 
-  // Preenche seller_name
+  // Preenche seller_name e seller_id
   useEffect(() => {
-    if (user) setProduct((prev) => ({ ...prev, seller_name: user.name }));
+    if (user) setProduct((prev) => ({ ...prev, seller_name: user.name, seller_id: user.user_id || "not_have" }));
   }, [user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -85,15 +87,14 @@ const Create_Products = () => {
 
     if (type.startsWith("image/"))
       return <Image src={fileUrl} alt="Digital Preview" width={200} height={200} className="rounded-lg mt-4" />;
-
     if (type.startsWith("video/"))
-      return <video controls width={300} className="rounded-lg mt-4"><source src={fileUrl} type={type} />Seu navegador não suporta vídeo.</video>;
-
-    if (type.startsWith("audio/"))
-      return <audio controls src={fileUrl} className="mt-4 w-full" />;
-
-    if (type === "application/pdf")
-      return <iframe src={fileUrl} width="100%" height={400} className="mt-4 rounded-lg border" />;
+      return (
+        <video controls width={300} className="rounded-lg mt-4">
+          <source src={fileUrl} type={type} />Seu navegador não suporta vídeo.
+        </video>
+      );
+    if (type.startsWith("audio/")) return <audio controls src={fileUrl} className="mt-4 w-full" />;
+    if (type === "application/pdf") return <iframe src={fileUrl} width="100%" height={400} className="mt-4 rounded-lg border" />;
 
     return (
       <div className="mt-4 p-4 bg-gray-700 rounded-md text-gray-200 flex items-center gap-2">
@@ -113,12 +114,12 @@ const Create_Products = () => {
 
     try {
       // Upload imagem
-      let imageUrl = product.image;
+      let imageUrl = product.product_image;
       if (imageFile) {
         const formData = new FormData();
         formData.append("file", imageFile);
-        const res = await api.post("/upload/uploads/", formData, { headers: { "Content-Type": "multipart/form-data" } });
-        imageUrl = res.data.url;
+        const res = await api.post("/upload/uploadimage", formData, { headers: { "Content-Type": "multipart/form-data" } });
+        imageUrl = res.data.fileUrl; // backend retorna fileUrl
       }
 
       // Upload digital
@@ -126,17 +127,19 @@ const Create_Products = () => {
       if (digitalFile) {
         const formData = new FormData();
         formData.append("file", digitalFile);
-        const res = await api.post("/upload/digital", formData, { headers: { "Content-Type": "multipart/form-data" } });
-        digitalUrl = res.data.url;
+
+        let endpoint = "/upload/uploaddoc";
+        if (digitalFile.type.startsWith("audio/")) endpoint = "/upload/uploadaudio";
+        else if (digitalFile.type.startsWith("video/")) endpoint = "/upload/uploadvideo";
+
+        const res = await api.post(endpoint, formData, { headers: { "Content-Type": "multipart/form-data" } });
+        digitalUrl = res.data.fileUrl;
       }
 
       const payload = {
         ...product,
-        image: imageUrl,
-        digital_product: digitalUrl,
-        user_id: user.id,
-        seller_id: user.user_id || "not have",
-        seller_name: user.name,
+        product_image: imageUrl,
+        product_content: digitalUrl,
       };
 
       const createResp = await api.post("/products", payload);
@@ -179,52 +182,50 @@ const Create_Products = () => {
         <main className="flex-1 mt-20 ml-60 px-8 py-6">
           <h1 className="text-4xl text-center font-bold mb-10 text-green-500">Create New Product</h1>
 
-          {/* Toasts */}
           <div className="fixed top-5 right-5 z-50 flex flex-col">{toasts.map((t) => <Toast key={t.id} type={t.type} message={t.message} />)}</div>
 
           <form onSubmit={handleSubmit} className="p-8 rounded-2xl max-w-5xl mx-auto space-y-8 bg-gray-800">
-            {/* Seller Name */}
             <div>
               <label className="block text-gray-300 mb-2">Seller Name</label>
               <input type="text" name="seller_name" value={product.seller_name} readOnly className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-400 cursor-not-allowed" />
             </div>
 
-            {/* Campos básicos */}
-            {["name", "price", "stock", "category"].map((field) => (
+            {[
+              { field: "product_name", type: "text" },
+              { field: "product_price", type: "number" },
+              { field: "product_stock", type: "text" },
+              { field: "product_category", type: "text" },
+            ].map(({ field, type }) => (
               <div key={field}>
-                <label className="block text-gray-300 mb-2">{field.charAt(0).toUpperCase() + field.slice(1)}</label>
+                <label className="block text-gray-300 mb-2">{field.replace("product_", "").replace("_", " ").toUpperCase()}</label>
                 <input
-                  type={field === "price" ? "number" : "text"}
+                  type={type}
                   name={field}
                   value={product[field as keyof typeof product]}
                   onChange={handleChange}
                   className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md"
-                  required={field === "name" || field === "price"}
+                  required={field === "product_name" || field === "product_price"}
                 />
               </div>
             ))}
 
-            {/* Description */}
             <div>
               <label className="block text-gray-300 mb-2">Description</label>
-              <textarea name="description" value={product.description} onChange={handleChange} rows={4} className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md" />
+              <textarea name="product_description" value={product.product_description} onChange={handleChange} rows={4} className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md" />
             </div>
 
-            {/* Upload Image */}
             <div>
               <label className="block text-gray-300 mb-2">Product Image</label>
               <input type="file" accept="image/*" onChange={handleImageChange} className="w-full text-gray-200" />
               {previewImage && <Image src={previewImage} alt="Preview" width={200} height={200} className="rounded-lg mt-4" />}
             </div>
 
-            {/* Upload Digital File */}
             <div>
               <label className="block text-gray-300 mb-2">Digital File</label>
               <input type="file" accept="*/*" onChange={handleDigitalChange} className="w-full text-gray-200" />
               {renderDigitalPreview()}
             </div>
 
-            {/* Submit */}
             <div className="flex justify-center">
               <button type="submit" disabled={loading} className="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-xl font-semibold text-white transition disabled:opacity-50">
                 {loading ? "Creating..." : "Create Product"}
