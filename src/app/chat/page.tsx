@@ -11,7 +11,6 @@ import api from '@/utils/api';
 
 export default function Chat() {
   const { session } = useAuth();
-  // Sincronização de usuário igual à Home e Header
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -26,41 +25,42 @@ export default function Chat() {
 
   const socketRef = useRef<Socket | null>(null);
 
-  // 1. Carregar usuário do LocalStorage (Padrão do seu App)
   useEffect(() => {
     const storedUser = localStorage.getItem("auth_user");
     if (storedUser) setCurrentUser(JSON.parse(storedUser));
   }, []);
 
-  // 2. Socket Connection
   useEffect(() => {
     if (!currentUser?.id) return;
-
-    socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
-    const socket = socketRef.current;
-
-    socket.on('receive_message', (msg: ChatMessage) => {
+    socketRef.current = io('https://korddyfirebase.imlinkey.store'); // URL Base para o Socket
+    
+    socketRef.current.on('receive_message', (msg: ChatMessage) => {
       setMessages((prev) => {
-        // Só adiciona se for da conversa que estou vendo agora
-        const isRelevant = msg.user_id === activeChatUser?.id || msg.receiver_id === activeChatUser?.id;
-        if (prev.some(m => m.id === msg.id) || !isRelevant) return prev;
+        const isFromCurrentChat = msg.user_id === activeChatUser?.id || msg.receiver_id === activeChatUser?.id;
+        if (prev.some(m => m.id === msg.id) || !isFromCurrentChat) return prev;
         return [...prev, msg];
       });
     });
 
-    return () => { socket.disconnect(); };
+    return () => { socketRef.current?.disconnect(); };
   }, [currentUser?.id, activeChatUser?.id]);
 
-  // 3. Busca de Usuários (CORRIGIDA)
+  // BUSCA DE USUÁRIOS NO ENDPOINT ESPECÍFICO
   const fetchUsers = useCallback(async () => {
     if (!search.trim()) return;
     try {
-      const res = await api.get('/auth/user', { params: { username: search } });
+      // Usando o endpoint completo fornecido
+      const res = await api.get('/auth/user', { 
+        params: { username: search } 
+      });
+      
       const data = res.data as User[];
-      // Filtra para não aparecer você mesmo na busca
-      setProfiles(data.filter(u => u.id !== currentUser?.id));
+      // Filtra para não listar você mesmo na busca
+      if (Array.isArray(data)) {
+        setProfiles(data.filter(u => u.id !== currentUser?.id));
+      }
     } catch (err) {
-      console.error('Erro ao buscar usuários:', err);
+      console.error('Erro ao buscar usuários no endpoint /auth/user:', err);
     }
   }, [search, currentUser?.id]);
 
@@ -116,7 +116,7 @@ export default function Chat() {
   if (!session) return <Loadingpage />;
 
   return (
-    <div className="flex h-screen bg-white dark:bg-gray-950 overflow-hidden">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden">
       <ChatSidebar
         search={search}
         setSearch={setSearch}
