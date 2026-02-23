@@ -7,7 +7,7 @@ export interface ApiErrorResponse {
   [key: string]: string | string[] | undefined;
 }
 
-const API_BASE = "https://korddyfirebases.onrender.com/api/v1/";
+const API_BASE = "https://korddyfirebase.imlinkey.store/api/v1/";
 
 // Função para pegar cookie
 const getCookie = (name: string) =>
