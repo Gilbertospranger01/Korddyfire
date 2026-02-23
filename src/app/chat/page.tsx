@@ -6,14 +6,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { User, ChatMessage } from '@/utils/types';
 import ChatSidebar from '@/components/chatSidebar';
 import ChatArea from '@/components/chatArea';
-import { IoClose, IoMenu } from 'react-icons/io5';
 import Loadingpage from '@/loadingpages/loadingpage';
 import api from '@/utils/api';
 
 export default function Chat() {
   const { session } = useAuth();
-  // Pegando user do session de forma segura
-  const user = useMemo(() => session?.user as unknown as User | null, [session]);
+  // Sincronização de usuário igual à Home e Header
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -27,53 +26,50 @@ export default function Chat() {
 
   const socketRef = useRef<Socket | null>(null);
 
-  // Inicializa socket uma única vez
+  // 1. Carregar usuário do LocalStorage (Padrão do seu App)
   useEffect(() => {
-    if (!user?.id) return;
+    const storedUser = localStorage.getItem("auth_user");
+    if (storedUser) setCurrentUser(JSON.parse(storedUser));
+  }, []);
 
-    socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
-      query: { userId: user.id }
-    });
+  // 2. Socket Connection
+  useEffect(() => {
+    if (!currentUser?.id) return;
 
+    socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
     const socket = socketRef.current;
 
     socket.on('receive_message', (msg: ChatMessage) => {
-      // Só adiciona se a mensagem for da conversa ativa ou do próprio usuário
       setMessages((prev) => {
-        const isFromActive = msg.user_id === activeChatUser?.id || msg.receiver_id === activeChatUser?.id;
-        if (prev.some((m) => m.id === msg.id) || !isFromActive) return prev;
+        // Só adiciona se for da conversa que estou vendo agora
+        const isRelevant = msg.user_id === activeChatUser?.id || msg.receiver_id === activeChatUser?.id;
+        if (prev.some(m => m.id === msg.id) || !isRelevant) return prev;
         return [...prev, msg];
       });
     });
 
-    socket.on('user_typing', (username: string) => {
-      setTyping((prev) => (prev.includes(username) ? prev : [...prev, username]));
-      setTimeout(() => {
-        setTyping((prev) => prev.filter((name) => name !== username));
-      }, 3000);
-    });
+    return () => { socket.disconnect(); };
+  }, [currentUser?.id, activeChatUser?.id]);
 
-    return () => {
-      socket.disconnect();
-    };
-  }, [user?.id, activeChatUser?.id]);
-
+  // 3. Busca de Usuários (CORRIGIDA)
   const fetchUsers = useCallback(async () => {
     if (!search.trim()) return;
     try {
       const res = await api.get('/auth/user', { params: { username: search } });
-      setProfiles((res.data as User[]).filter((u) => u.id !== user?.id));
+      const data = res.data as User[];
+      // Filtra para não aparecer você mesmo na busca
+      setProfiles(data.filter(u => u.id !== currentUser?.id));
     } catch (err) {
       console.error('Erro ao buscar usuários:', err);
     }
-  }, [search, user?.id]);
+  }, [search, currentUser?.id]);
 
   const fetchMessages = useCallback(async () => {
-    if (!user?.id || !activeChatUser?.id) return;
+    if (!currentUser?.id || !activeChatUser?.id) return;
     setLoadingMessages(true);
     try {
       const res = await api.get(`/chat_messages/conversation`, {
-        params: { user1: user.id, user2: activeChatUser.id },
+        params: { user1: currentUser.id, user2: activeChatUser.id },
       });
       setMessages(res.data || []);
     } catch (error) {
@@ -81,52 +77,46 @@ export default function Chat() {
     } finally {
       setLoadingMessages(false);
     }
-  }, [user?.id, activeChatUser?.id]);
+  }, [currentUser?.id, activeChatUser?.id]);
 
   const loadPreviousContacts = useCallback(async () => {
-    if (!user?.id) return;
+    if (!currentUser?.id) return;
     try {
-      const res = await api.get(`/chat_messages/contacts/${user.id}`);
+      const res = await api.get(`/chat_messages/contacts/${currentUser.id}`);
       setPreviousContacts(res.data || []);
     } catch (error) {
       console.error('Erro ao carregar contatos:', error);
     }
-  }, [user?.id]);
+  }, [currentUser?.id]);
 
   useEffect(() => {
     if (activeChatUser) fetchMessages();
   }, [activeChatUser, fetchMessages]);
 
   useEffect(() => {
-    loadPreviousContacts();
-  }, [loadPreviousContacts]);
+    if (currentUser?.id) loadPreviousContacts();
+  }, [currentUser, loadPreviousContacts]);
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !user || !activeChatUser) return;
-
+    if (!newMessage.trim() || !currentUser || !activeChatUser) return;
     const msgData = {
-      username: user.username,
-      user_id: user.id,
+      username: currentUser.username,
+      user_id: currentUser.id,
       receiver_id: activeChatUser.id,
       message: newMessage,
     };
-
     try {
       const res = await api.post('/chat_messages', msgData);
-      const savedMsg = res.data as ChatMessage;
-      
-      socketRef.current?.emit('send_message', savedMsg);
-      setMessages((prev) => [...prev, savedMsg]);
+      socketRef.current?.emit('send_message', res.data);
+      setMessages(prev => [...prev, res.data]);
       setNewMessage('');
-    } catch (error) {
-      console.error('Erro ao enviar:', error);
-    }
+    } catch (error) { console.error(error); }
   };
 
   if (!session) return <Loadingpage />;
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden">
+    <div className="flex h-screen bg-white dark:bg-gray-950 overflow-hidden">
       <ChatSidebar
         search={search}
         setSearch={setSearch}
@@ -138,27 +128,17 @@ export default function Chat() {
         handleSearch={fetchUsers}
         activeChatUserId={activeChatUser?.id}
       />
-
-      <div className="flex-1 flex flex-col relative h-full">
-        {/* Botão Mobile Hamburger */}
-        <button
-          onClick={() => setIsSidebarOpen(true)}
-          className="md:hidden absolute top-4 left-4 z-40 bg-white dark:bg-gray-800 p-2 rounded-xl shadow-md border dark:border-gray-700"
-        >
-          <IoMenu size={24} className="text-gray-700 dark:text-gray-200" />
-        </button>
-
-        <ChatArea
-          messages={messages}
-          newMessage={newMessage}
-          setNewMessage={setNewMessage}
-          activeChatUser={activeChatUser}
-          user={user}
-          typing={typing}
-          handleSendMessage={handleSendMessage}
-          loadingMessages={loadingMessages}
-        />
-      </div>
+      <ChatArea
+        messages={messages}
+        newMessage={newMessage}
+        setNewMessage={setNewMessage}
+        activeChatUser={activeChatUser}
+        user={currentUser}
+        typing={typing}
+        handleSendMessage={handleSendMessage}
+        loadingMessages={loadingMessages}
+        onOpenSidebar={() => setIsSidebarOpen(true)}
+      />
     </div>
   );
 }
