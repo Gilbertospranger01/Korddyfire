@@ -32,29 +32,24 @@ const Create_Products = () => {
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [digitalFile, setDigitalFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
-  // Recupera usuário salvo no localStorage e normaliza
+  // Recupera usuário
   useEffect(() => {
     const storedUser = localStorage.getItem("auth_user");
     if (storedUser) {
       const parsed = JSON.parse(storedUser);
-
-      const normalizedUser: User = {
+      setUser({
         id: parsed.id,
         name: parsed.name || parsed.user_metadata?.name || "User",
         username: parsed.username || "",
         email: parsed.email || "",
         avatar_url: parsed.avatar_url || parsed.user_metadata?.avatar_url || null,
         user_id: parsed.user_metadata?.user_id || parsed.user_id || "",
-      };
-
-      setUser(normalizedUser);
-    } else {
-      setUser(null);
+      });
     }
   }, []);
 
@@ -67,37 +62,81 @@ const Create_Products = () => {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      setPreview(URL.createObjectURL(file));
-    }
+    if (!file) return;
+    setImageFile(file);
+    setPreviewImage(URL.createObjectURL(file));
   };
 
   const handleDigitalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setDigitalFile(file);
+    if (!file) return;
+    setDigitalFile(file);
+  };
+
+  const renderDigitalPreview = () => {
+    if (!digitalFile) return null;
+    const fileUrl = URL.createObjectURL(digitalFile);
+    const type = digitalFile.type;
+
+    if (type.startsWith("image/")) {
+      return (
+        <Image
+          src={fileUrl}
+          alt="Digital Preview"
+          width={200}
+          height={200}
+          className="rounded-lg mt-4"
+        />
+      );
+    }
+
+    if (type.startsWith("video/")) {
+      return (
+        <video controls width={300} className="rounded-lg mt-4">
+          <source src={fileUrl} type={type} />
+          Seu navegador não suporta vídeo.
+        </video>
+      );
+    }
+
+    if (type.startsWith("audio/")) {
+      return <audio controls src={fileUrl} className="mt-4 w-full" />;
+    }
+
+    if (type === "application/pdf") {
+      return (
+        <iframe
+          src={fileUrl}
+          width="100%"
+          height={400}
+          className="mt-4 rounded-lg border"
+        />
+      );
+    }
+
+    // Outros formatos: mostrar nome + ícone genérico
+    return (
+      <div className="mt-4 p-4 bg-gray-700 rounded-md text-gray-200 flex items-center gap-2">
+        <span className="font-semibold">Arquivo:</span> {digitalFile.name}
+      </div>
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!user) return;
+
     setLoading(true);
-
-    if (!user) {
-      console.error("Usuário não autenticado!");
-      setLoading(false);
-      return;
-    }
-
     try {
       // Upload imagem
       let imageUrl = product.image;
       if (imageFile) {
         const formData = new FormData();
         formData.append("file", imageFile);
-        const uploadImageResp = await api.post("/upload/uploads/", formData, {
+        const res = await api.post("/upload/uploads/", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        imageUrl = uploadImageResp.data.url;
+        imageUrl = res.data.url;
       }
 
       // Upload digital
@@ -105,13 +144,12 @@ const Create_Products = () => {
       if (digitalFile) {
         const formData = new FormData();
         formData.append("file", digitalFile);
-        const uploadDigitalResp = await api.post("/upload/digital", formData, {
+        const res = await api.post("/upload/digital", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        digitalUrl = uploadDigitalResp.data.url;
+        digitalUrl = res.data.url;
       }
 
-      // Payload final
       const payload = {
         ...product,
         image: imageUrl,
@@ -122,12 +160,8 @@ const Create_Products = () => {
       };
 
       const createResp = await api.post("/products", payload);
-
-      if (createResp.status === 201) {
-        router.push("/home");
-      } else {
-        console.error("Erro ao criar produto:", createResp);
-      }
+      if (createResp.status === 201) router.push("/home");
+      else console.error("Erro ao criar produto:", createResp);
     } catch (error) {
       console.error("Erro ao criar produto:", error);
     } finally {
@@ -135,11 +169,9 @@ const Create_Products = () => {
     }
   };
 
-  // Preenche seller_name automaticamente
+  // Preenche seller_name
   useEffect(() => {
-    if (user) {
-      setProduct((prev) => ({ ...prev, seller_name: user.name }));
-    }
+    if (user) setProduct((prev) => ({ ...prev, seller_name: user.name }));
   }, [user]);
 
   if (!user) return <Loadingpage />;
@@ -194,55 +226,22 @@ const Create_Products = () => {
               />
             </div>
 
-            {/* Product Name */}
-            <div>
-              <label className="block text-gray-300 mb-2">Product Name</label>
-              <input
-                type="text"
-                name="name"
-                value={product.name}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md"
-              />
-            </div>
-
-            {/* Price */}
-            <div>
-              <label className="block text-gray-300 mb-2">Price</label>
-              <input
-                type="number"
-                name="price"
-                value={product.price}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md"
-              />
-            </div>
-
-            {/* Stock */}
-            <div>
-              <label className="block text-gray-300 mb-2">Stock</label>
-              <input
-                type="text"
-                name="stock"
-                value={product.stock}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md"
-              />
-            </div>
-
-            {/* Category */}
-            <div>
-              <label className="block text-gray-300 mb-2">Category</label>
-              <input
-                type="text"
-                name="category"
-                value={product.category}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md"
-              />
-            </div>
+            {/* Outros campos */}
+            {["name", "price", "stock", "category"].map((field) => (
+              <div key={field}>
+                <label className="block text-gray-300 mb-2">
+                  {field.charAt(0).toUpperCase() + field.slice(1)}
+                </label>
+                <input
+                  type={field === "price" ? "number" : "text"}
+                  name={field}
+                  value={product[field as keyof typeof product]}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md"
+                  required={field === "name" || field === "price"}
+                />
+              </div>
+            ))}
 
             {/* Description */}
             <div>
@@ -265,10 +264,10 @@ const Create_Products = () => {
                 onChange={handleImageChange}
                 className="w-full text-gray-200"
               />
-              {preview && (
+              {previewImage && (
                 <div className="mt-4">
                   <Image
-                    src={preview}
+                    src={previewImage}
                     alt="Preview"
                     width={200}
                     height={200}
@@ -283,10 +282,11 @@ const Create_Products = () => {
               <label className="block text-gray-300 mb-2">Digital File</label>
               <input
                 type="file"
-                accept=".pdf,.zip,.rar"
+                accept="*/*"
                 onChange={handleDigitalChange}
                 className="w-full text-gray-200"
               />
+              {renderDigitalPreview()}
             </div>
 
             {/* Submit */}
