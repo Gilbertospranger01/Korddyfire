@@ -5,7 +5,7 @@ interface ToastProps {
   type: "success" | "error" | "warning" | "info";
 }
 
-export const Toast = ({ message, type }: ToastProps) => {
+const Toast = ({ message, type }: ToastProps) => {
   const bgColor = {
     success: "bg-green-600",
     error: "bg-red-600",
@@ -21,3 +21,5 @@ export const Toast = ({ message, type }: ToastProps) => {
     </div>
   );
 };
+
+export default Toast;
