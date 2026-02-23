@@ -13,44 +13,38 @@ import api from "@/utils/api";
 
 type User = { id: string; name: string; picture?: string; username?: string };
 
-const getCookie = (name: string) =>
-  typeof document !== "undefined"
-    ? document.cookie
-        .split("; ")
-        .find((c) => c.startsWith(name + "="))
-        ?.split("=")[1]
-    : null;
-
 const Header = () => {
   const router = useRouter();
   const { showSidebar, setShowSidebar } = useSidebar();
 
+  // Inicializamos o estado. Se for possível ler o localStorage na hora (client-side), já pegamos.
   const [user, setUser] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // PEGAR USUÁRIO IGUAL NA HOME (Cookie + LocalStorage)
+  // Efeito para carregar o usuário assim que o componente monta no navegador
   useEffect(() => {
-    const token = getCookie("auth_token");
     const storedUser = localStorage.getItem("auth_user");
-
-    if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        console.log("Usuário carregado:", parsedUser); // Para debug
+      } catch (e) {
+        console.error("Erro ao dar parse no usuário", e);
+      }
     }
   }, []);
 
   const handleSearch = useCallback(async () => {
-    if (!searchTerm.trim()) {
-      setResults([]);
-      return;
-    }
+    if (!searchTerm.trim()) return;
     setLoading(true);
     try {
       const res = await api.get(`/products/${searchTerm}`);
       setResults(res.data || []);
     } catch (err) {
-      console.error("Erro ao buscar produtos", err);
+      console.error("Erro ao buscar", err);
     } finally {
       setLoading(false);
     }
@@ -64,106 +58,76 @@ const Header = () => {
   return (
     <>
       <Sidebar />
-      <header className="w-full fixed top-0 left-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-colors">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 h-16 md:h-20 flex items-center justify-between gap-4">
+      <header className="w-full fixed top-0 left-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+        <div className="max-w-[1440px] mx-auto px-4 h-16 md:h-20 flex items-center justify-between gap-4">
           
-          {/* Lado Esquerdo: Logo */}
-          <div className="flex-shrink-0">
-            <Link href="/home" className="flex items-center">
-              <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent hover:opacity-80 transition">
-                Korddyfire
-              </h1>
-            </Link>
-          </div>
+          {/* Logo */}
+          <Link href="/home" className="flex-shrink-0">
+            <h1 className="text-xl md:text-2xl font-black text-green-600 tracking-tighter">
+              Korddyfire
+            </h1>
+          </Link>
 
-          {/* Centro: Search Bar (Escondida em mobile muito pequeno ou ajustada) */}
-          <div className="hidden sm:block flex-1 max-w-md relative">
+          {/* Busca (Desktop) */}
+          <div className="hidden md:block flex-1 max-w-[400px]">
             <InputSearch
               value={searchTerm}
               onChange={setSearchTerm}
               onSearch={handleSearch}
-              onClear={() => {
-                setSearchTerm("");
-                setResults([]);
-              }}
+              onClear={() => setSearchTerm("")}
             />
-            
-            {/* Dropdown de Resultados (Opcional/Simplificado) */}
-            {searchTerm.trim() && (
-              <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-                {loading ? (
-                  <p className="p-4 text-center text-sm text-gray-500">Buscando...</p>
-                ) : results.length === 0 ? (
-                  <p className="p-4 text-center text-sm text-gray-500">Nada encontrado.</p>
-                ) : null}
-              </div>
-            )}
           </div>
 
-          {/* Lado Direito: Ações */}
-          <div className="flex items-center gap-2 md:gap-4">
-            <button 
-              onClick={() => router.push("/chat")} 
-              className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition relative"
-              aria-label="Chat"
-            >
-              <IoChatboxEllipses size={24} />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-900"></span>
+          {/* Ações e Profile */}
+          <div className="flex items-center gap-3 md:gap-5">
+            <button onClick={() => router.push("/chat")} className="text-gray-600 dark:text-gray-300 hover:text-green-500 transition">
+              <IoChatboxEllipses size={26} />
             </button>
+            
+            <ButtonTheme />
 
-            <div className="hidden xs:block">
-              <ButtonTheme />
-            </div>
-
-            {/* Nome do Usuário (Desktop) */}
-            <div className="hidden lg:flex flex-col items-end mr-1">
-              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium leading-none">Bem-vindo,</span>
-              <span className="text-sm font-bold text-gray-800 dark:text-white truncate max-w-[100px]">
-                {user?.name || "Usuário"}
-              </span>
+            {/* AQUI APARECE O NOME: Garantimos que só renderiza se o user existir */}
+            <div className="hidden sm:flex flex-col text-right">
+               <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">User</p>
+               <p className="text-sm font-bold text-blue-600 dark:text-blue-400 leading-none">
+                 {user?.name || user?.username || "Visitante"}
+               </p>
             </div>
 
             {/* Avatar / Toggle Sidebar */}
             <button
-              className="group relative flex items-center justify-center p-0.5 rounded-full bg-gradient-to-tr from-green-500 to-emerald-400 hover:shadow-lg transition-all"
+              className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-green-500 p-0.5 overflow-hidden active:scale-90 transition"
               onClick={() => setShowSidebar(!showSidebar)}
             >
-              <div className="w-9 h-9 md:w-11 md:h-11 rounded-full border-2 border-white dark:border-gray-900 overflow-hidden bg-gray-200 dark:bg-gray-700">
-                {user?.picture ? (
-                  <Image
-                    src={user.picture}
-                    alt="Profile"
-                    width={44}
-                    height={44}
-                    className="object-cover w-full h-full group-hover:scale-110 transition"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold uppercase">
-                    {user?.name?.charAt(0) || "U"}
-                  </div>
-                )}
-              </div>
+              {user?.picture ? (
+                <Image
+                  src={user.picture}
+                  alt="Profile"
+                  width={48}
+                  height={48}
+                  className="rounded-full object-cover w-full h-full"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center font-bold text-gray-500">
+                  {user?.name?.charAt(0) || "U"}
+                </div>
+              )}
             </button>
           </div>
         </div>
 
-        {/* Barra de Busca Mobile (Apenas Visível em Telas Pequenas) */}
-        <div className="sm:hidden px-4 pb-3">
+        {/* Busca (Mobile) - Aparece abaixo do header em telas pequenas */}
+        <div className="md:hidden px-4 pb-3 bg-white dark:bg-gray-900">
           <InputSearch
             value={searchTerm}
             onChange={setSearchTerm}
             onSearch={handleSearch}
-            className="w-full"
-            onClear={() => {
-              setSearchTerm("");
-              setResults([]);
-            }}
           />
         </div>
       </header>
       
-      {/* Spacer para não cobrir o conteúdo (Importante!) */}
-      <div className="h-[116px] sm:h-16 md:h-20" />
+      {/* Ajuste do Padding Top para o conteúdo não subir */}
+      <div className="h-28 md:h-20" />
     </>
   );
 };
