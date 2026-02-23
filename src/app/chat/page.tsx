@@ -51,16 +51,16 @@ export default function Chat() {
 
   // Busca usuários pela API RESTful
   const fetchUsers = useCallback(async () => {
-    if (!search.trim()) return;
-
-    try {
-      const res = await api.get(`/profiles?username_like=${search}`);
-      const data = res.data as User[];
-      if (mounted.current) setProfiles(data.filter((u) => u.id !== user?.id));
-    } catch (error) {
-      console.error('Erro ao buscar usuários:', error);
-    }
-  }, [search, user?.id]);
+  try {
+    const res = await api.get('/profiles', {
+      params: { username: search } // envia query correta pro backend
+    });
+    const data = res.data as User[];
+    if (mounted.current) setProfiles(data.filter((u) => u.id !== user?.id));
+  } catch (err) {
+    console.error('Erro ao buscar usuários:', err);
+  }
+}, [search, user?.id]);
 
   // Busca mensagens entre usuários via API RESTful
   const fetchMessages = useCallback(async () => {
