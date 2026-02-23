@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { io, Socket } from 'socket.io-client';
@@ -12,6 +12,7 @@ import api from '@/utils/api';
 
 export default function Chat() {
   const { session } = useAuth();
+  // Pegando user do session de forma segura
   const user = useMemo(() => session?.user as unknown as User | null, [session]);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -22,150 +23,110 @@ export default function Chat() {
   const [previousContacts, setPreviousContacts] = useState<User[]>([]);
   const [activeChatUser, setActiveChatUser] = useState<User | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
-  const mounted = useRef(true);
 
-  // Inicializa socket
+  // Inicializa socket uma única vez
   useEffect(() => {
-    socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
+    if (!user?.id) return;
+
+    socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
+      query: { userId: user.id }
+    });
 
     const socket = socketRef.current;
 
     socket.on('receive_message', (msg: ChatMessage) => {
-      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+      // Só adiciona se a mensagem for da conversa ativa ou do próprio usuário
+      setMessages((prev) => {
+        const isFromActive = msg.user_id === activeChatUser?.id || msg.receiver_id === activeChatUser?.id;
+        if (prev.some((m) => m.id === msg.id) || !isFromActive) return prev;
+        return [...prev, msg];
+      });
     });
 
     socket.on('user_typing', (username: string) => {
       setTyping((prev) => (prev.includes(username) ? prev : [...prev, username]));
       setTimeout(() => {
         setTyping((prev) => prev.filter((name) => name !== username));
-      }, 2000);
+      }, 3000);
     });
 
     return () => {
-      mounted.current = false;
       socket.disconnect();
     };
-  }, []);
+  }, [user?.id, activeChatUser?.id]);
 
-  // Busca usuários pela API RESTful
   const fetchUsers = useCallback(async () => {
-  try {
-    const res = await api.get('/auth/user', {
-      params: { username: search } // envia query correta pro backend
-    });
-    const data = res.data as User[];
-    if (mounted.current) setProfiles(data.filter((u) => u.id !== user?.id));
-  } catch (err) {
-    console.error('Erro ao buscar usuários:', err);
-  }
-}, [search, user?.id]);
+    if (!search.trim()) return;
+    try {
+      const res = await api.get('/auth/user', { params: { username: search } });
+      setProfiles((res.data as User[]).filter((u) => u.id !== user?.id));
+    } catch (err) {
+      console.error('Erro ao buscar usuários:', err);
+    }
+  }, [search, user?.id]);
 
-  // Busca mensagens entre usuários via API RESTful
   const fetchMessages = useCallback(async () => {
-    if (!user || !activeChatUser) return;
-
+    if (!user?.id || !activeChatUser?.id) return;
+    setLoadingMessages(true);
     try {
       const res = await api.get(`/chat_messages/conversation`, {
-        params: {
-          user1: user.id,
-          user2: activeChatUser.id,
-        },
+        params: { user1: user.id, user2: activeChatUser.id },
       });
-      if (mounted.current) setMessages(res.data || []);
+      setMessages(res.data || []);
     } catch (error) {
       console.error('Erro ao carregar mensagens:', error);
+    } finally {
+      setLoadingMessages(false);
     }
-  }, [user, activeChatUser]);
+  }, [user?.id, activeChatUser?.id]);
 
-  // Carrega contatos anteriores via API RESTful
-  const loadPreviousContacts = useCallback(async (userId: string) => {
+  const loadPreviousContacts = useCallback(async () => {
+    if (!user?.id) return;
     try {
-      const res = await api.get(`/chat_messages/contacts/${userId}`);
-      if (mounted.current) setPreviousContacts(res.data || []);
+      const res = await api.get(`/chat_messages/contacts/${user.id}`);
+      setPreviousContacts(res.data || []);
     } catch (error) {
       console.error('Erro ao carregar contatos:', error);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  }, [user?.id]);
 
   useEffect(() => {
     if (activeChatUser) fetchMessages();
   }, [activeChatUser, fetchMessages]);
 
   useEffect(() => {
-    if (user?.id) loadPreviousContacts(user.id);
-  }, [user, loadPreviousContacts]);
+    loadPreviousContacts();
+  }, [loadPreviousContacts]);
 
-  // Envia mensagem
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user || !activeChatUser) return;
 
-    const msg: Partial<ChatMessage> = {
+    const msgData = {
       username: user.username,
       user_id: user.id,
       receiver_id: activeChatUser.id,
       message: newMessage,
-      created_at: new Date().toISOString(),
     };
 
     try {
-      const res = await api.post('/chat_messages', msg);
+      const res = await api.post('/chat_messages', msgData);
       const savedMsg = res.data as ChatMessage;
+      
       socketRef.current?.emit('send_message', savedMsg);
-      if (mounted.current) {
-        setMessages((prev) => [...prev, savedMsg]);
-        setNewMessage('');
-      }
+      setMessages((prev) => [...prev, savedMsg]);
+      setNewMessage('');
     } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
-    }
-  };
-
-  // Edita mensagem
-  const handleEditMessage = async (id: string, oldMsg: string) => {
-    const newMsg = prompt('Editar mensagem:', oldMsg);
-    if (newMsg && newMsg !== oldMsg) {
-      try {
-        await api.put(`/chat_messages/${id}`, { message: newMsg });
-        if (mounted.current) {
-          setMessages((prev) =>
-            prev.map((msg) => (msg.id === id ? { ...msg, message: newMsg } : msg))
-          );
-        }
-      } catch (error) {
-        console.error('Erro ao editar mensagem:', error);
-      }
-    }
-  };
-
-  // Deleta mensagem
-  const handleDeleteMessage = async (id?: string) => {
-    if (!id) return;
-    try {
-      await api.delete(`/chat_messages/${id}`);
-      if (mounted.current) setMessages((prev) => prev.filter((msg) => msg.id !== id));
-    } catch (error) {
-      console.error('Erro ao deletar mensagem:', error);
+      console.error('Erro ao enviar:', error);
     }
   };
 
   if (!session) return <Loadingpage />;
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Botão mobile para abrir menu */}
-      <button
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="md:hidden fixed top-4 right-4 z-50 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full shadow-lg transition"
-      >
-        {isSidebarOpen ? <IoClose size={24} /> : <IoMenu size={24} />}
-      </button>
-
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden">
       <ChatSidebar
         search={search}
         setSearch={setSearch}
@@ -175,19 +136,29 @@ export default function Chat() {
         isOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
         handleSearch={fetchUsers}
+        activeChatUserId={activeChatUser?.id}
       />
 
-      <ChatArea
-        messages={messages}
-        newMessage={newMessage}
-        setNewMessage={setNewMessage}
-        activeChatUser={activeChatUser}
-        user={user}
-        typing={typing}
-        handleSendMessage={handleSendMessage}
-        handleEditMessage={handleEditMessage}
-        handleDeleteMessage={handleDeleteMessage}
-      />
+      <div className="flex-1 flex flex-col relative h-full">
+        {/* Botão Mobile Hamburger */}
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          className="md:hidden absolute top-4 left-4 z-40 bg-white dark:bg-gray-800 p-2 rounded-xl shadow-md border dark:border-gray-700"
+        >
+          <IoMenu size={24} className="text-gray-700 dark:text-gray-200" />
+        </button>
+
+        <ChatArea
+          messages={messages}
+          newMessage={newMessage}
+          setNewMessage={setNewMessage}
+          activeChatUser={activeChatUser}
+          user={user}
+          typing={typing}
+          handleSendMessage={handleSendMessage}
+          loadingMessages={loadingMessages}
+        />
+      </div>
     </div>
   );
 }
