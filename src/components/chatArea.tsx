@@ -1,8 +1,7 @@
-'use client';
+"use client";
 
 import { useRef, useEffect } from 'react';
 import { ChatMessage, User } from '@/utils/types';
-import { FaEdit, FaTrash } from 'react-icons/fa';
 import { IoSend } from 'react-icons/io5';
 import Image from 'next/image';
 
@@ -14,126 +13,100 @@ interface ChatAreaProps {
   user: User | null;
   typing: string[];
   handleSendMessage: () => void;
-  handleEditMessage: (id: string, oldMsg: string) => void;
-  handleDeleteMessage: (id?: string) => void;
+  loadingMessages: boolean;
 }
 
 export default function ChatArea({
-  messages,
-  newMessage,
-  setNewMessage,
-  activeChatUser,
-  user,
-  typing,
-  handleSendMessage,
-  handleEditMessage,
-  handleDeleteMessage,
+  messages, newMessage, setNewMessage, activeChatUser, user, typing, handleSendMessage, loadingMessages
 }: ChatAreaProps) {
-  const scroller = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (scroller.current) {
-      scroller.current.scrollIntoView({ behavior: 'smooth' });
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, typing]);
+
+  if (!activeChatUser) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center text-gray-500 bg-gray-50 dark:bg-gray-900">
+        <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm text-center">
+          <p className="text-lg font-medium">Selecione uma conversa para começar</p>
+          <p className="text-sm opacity-60">Sua privacidade é nossa prioridade.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-900 px-4 md:px-6 text-white">
-      {/* Top Bar */}
-      <div className="p-4 border-b border-zinc-700">
-        {activeChatUser ? (
-          <div className="flex items-center space-x-3">
-            {activeChatUser.picture_url && (
-              <Image
-                src={activeChatUser.picture_url}
-                alt={activeChatUser.username}
-                width={40}
-                height={40}
-                className="rounded-full"
-              />
-            )}
-            <h2 className="text-lg">{activeChatUser.username}</h2>
-            {typing.includes(activeChatUser.username) && (
-              <span className="text-sm text-green-500 animate-pulse">digitando...</span>
+    <div className="flex-1 flex flex-col h-full bg-white dark:bg-gray-950">
+      {/* Header do Chat */}
+      <div className="px-6 py-4 border-b dark:border-gray-800 flex items-center justify-between bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-10">
+        <div className="flex items-center gap-3">
+          <div className="relative w-10 h-10">
+            <Image
+              src={activeChatUser.picture_url || '/placeholder.jpg'}
+              alt={activeChatUser.username}
+              fill
+              className="rounded-full object-cover border-2 border-green-500"
+            />
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-950 rounded-full" />
+          </div>
+          <div>
+            <h3 className="font-bold text-gray-900 dark:text-white leading-none">
+              {activeChatUser.username}
+            </h3>
+            {typing.includes(activeChatUser.username) ? (
+              <span className="text-xs text-green-500 font-medium animate-pulse">digitando...</span>
+            ) : (
+              <span className="text-xs text-gray-500">Online agora</span>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Mensagens */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 scroll-smooth">
+        {loadingMessages ? (
+          <div className="flex justify-center p-10"><span className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></span></div>
         ) : (
-          <p className="text-zinc-500">Escolha alguém para conversar.</p>
+          messages.map((msg) => {
+            const isSender = msg.user_id === user?.id;
+            return (
+              <div key={msg.id} className={`flex ${isSender ? 'justify-end' : 'justify-start'} animate-fade-in`}>
+                <div className={`max-w-[80%] md:max-w-[60%] px-4 py-2.5 rounded-2xl shadow-sm ${
+                  isSender 
+                    ? 'bg-green-600 text-white rounded-tr-none' 
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-tl-none'
+                }`}>
+                  <p className="text-sm md:text-base leading-relaxed">{msg.message}</p>
+                  <span className={`block text-[10px] mt-1 opacity-70 ${isSender ? 'text-right' : 'text-left'}`}>
+                    {new Date(msg.created_at!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
 
-      {/* Messages */}
-      {activeChatUser && (
-        <div className="w-full px-4">
-          <div
-            className="w-full overflow-y-auto scrollbar-none"
-            style={{
-              maxHeight: 'calc(100vh - 150px)',
-            }}
-          >
-            {messages.map((msg) => {
-              const isSender = msg.user_id === user?.id;
-
-              return (
-                <div key={msg.id} className={`mb-4 flex ${isSender ? 'justify-end' : 'justify-start'}`}>
-                  <div className="w-fit max-w-[90%] md:max-w-xl lg:max-w-2xl">
-                    <div className="font-bold text-sm mb-1">
-                      {isSender ? 'Eu' : activeChatUser?.username || 'Desconhecido'}
-                    </div>
-                    <div
-                      className={`mb-2 flex ${
-                        isSender
-                          ? 'bg-gray-200 dark:bg-gray-700 rounded-bl-lg rounded-tr-lg rounded-tl-lg'
-                          : 'bg-gray-200 dark:bg-gray-800 rounded-br-lg rounded-tr-lg rounded-tl-lg'
-                      } p-2 shadow-sm`}
-                    >
-                      <div>{msg.message}</div>
-
-                      {isSender && (
-                        <div className="flex justify-end ml-2">
-                          <button
-                            onClick={() => handleEditMessage(msg.id!, msg.message)}
-                            className="text-blue-500 hover:text-blue-600 cursor-pointer"
-                          >
-                            <FaEdit />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteMessage(msg.id)}
-                            className="text-red-500 hover:text-red-600 ml-2"
-                          >
-                            <FaTrash />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      {new Date(msg.created_at!).toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            <div ref={scroller} />
-          </div>
-        </div>
-      )}
-
-      {/* Input */}
-      <div className="bottom-0 lg:static lg:bottom-auto fixed left-0 w-full bg-white dark:bg-gray-900 border-t border-zinc-700 z-99">
-        <div className="flex items-center py-3 max-w-4xl mx-auto">
+      {/* Input de Mensagem */}
+      <div className="p-4 border-t dark:border-gray-800 bg-white dark:bg-gray-950">
+        <div className="max-w-4xl mx-auto flex items-center gap-2 bg-gray-100 dark:bg-gray-900 rounded-2xl p-1.5 border dark:border-gray-800 focus-within:ring-2 ring-green-500 transition-all">
           <input
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            className="flex-1 p-2 mr-2 dark:bg-gray-700 rounded-s-full pl-4 text-sm md:text-base"
-            placeholder="Digite sua mensagem..."
+            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+            placeholder="Escreva sua mensagem..."
+            className="flex-1 bg-transparent border-none focus:ring-0 px-3 text-sm dark:text-white outline-none"
           />
-
           <button
             onClick={handleSendMessage}
-            className="bg-blue-500 text-white p-3 rounded-e-full hover:bg-blue-600 cursor-pointer"
+            disabled={!newMessage.trim()}
+            className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white p-3 rounded-xl transition-all active:scale-95 shadow-lg shadow-green-500/20"
           >
-            <IoSend />
+            <IoSend size={18} />
           </button>
         </div>
       </div>
