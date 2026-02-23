@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import api from "@/utils/api";  // substituindo supabase
+import api from "@/utils/api";
 import Header from "@/components/header";
 import Image from "next/image";
 import { Heart } from "lucide-react";
@@ -11,70 +11,33 @@ import React from "react";
 import { useAuth } from "@/hooks/useAuth";
 import Loadingpage from "@/loadingpages/loadingpage";
 
+// Tipagem alinhada ao seu Sequelize Model
+interface ProductData {
+  product_id: string;      // Alterado de 'id'
+  seller_id: string;       // Alterado de 'user_id'
+  product_name: string;    // Alterado de 'name'
+  product_price: number;   // Alterado de 'price'
+  product_description: string;
+  product_image?: string;
+  product_stock: number;
+}
+
 function Details() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const productId = searchParams.get("id");
   const { session } = useAuth();
 
-  const [product, setProduct] = useState<{
-    user_id: string;
-    id: string;
-    name: string;
-    price: number;
-    description: string;
-    image?: string;
-    stock: number;
-  } | null>(null);
-
+  const [product, setProduct] = useState<ProductData | null>(null);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
-  const [loading, setLoading] = useState<Record<string, boolean>>({});
-
-  const handleBuyNow = async () => {
-    const amount = product?.price;
-    const seller_id = product?.user_id;
-    const buyer_id = session?.user.id;
-
-    if (!amount || !buyer_id || !seller_id) {
-      console.error("Dados incompletos para o pagamento.", amount, buyer_id, seller_id);
-      return;
-    }
-
-    try {
-      setLoading((prev) => ({ ...prev, [product?.id ?? ""]: true }));
-
-      const res = await fetch('/api/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ amount, buyer_id, seller_id }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data?.error || "Erro ao criar pagamento");
-      }
-
-      router.push(`/payments?client_secret=${data.clientSecret}`);
-    } catch (err) {
-      console.error("Erro no pagamento:", err);
-    } finally {
-      setLoading((prev) => ({ ...prev, [product?.id ?? ""]: false }));
-    }
-  };
-
-  const toggleFavorite = (id: string) => {
-    setFavorites((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
+  const [isBuying, setIsBuying] = useState(false);
 
   useEffect(() => {
     async function fetchProduct() {
       if (!productId) return;
+      // Validação simples: se não for um UUID (com hifens ou 32-36 caracteres), 
+      // evita chamar o banco para não causar o erro 22P02 do Postgres
+      if (productId.length < 30) return; 
 
       try {
         const response = await api.get(`products/${productId}`);
@@ -83,86 +46,105 @@ function Details() {
         console.error("Erro ao buscar produto:", error);
       }
     }
-
     fetchProduct();
   }, [productId]);
 
-  if (!product) {
-    return <Loadingpage />;
-  }
+  const handleBuyNow = async () => {
+    if (!product || !session?.user?.id) return;
 
-  if (!session) {
-    return <Loadingpage />;
-  }
+    const amount = product.product_price;
+    const seller_id = product.seller_id;
+    const buyer_id = session.user.id;
+
+    setIsBuying(true);
+
+    try {
+      const res = await fetch('/api/create-payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, buyer_id, seller_id }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Erro ao criar pagamento");
+
+      router.push(`/payments?client_secret=${data.clientSecret}`);
+    } catch (err) {
+      console.error("Erro no pagamento:", err);
+    } finally {
+      setIsBuying(false);
+    }
+  };
+
+  if (!product || !session) return <Loadingpage />;
 
   return (
-    <div className="bg-gray-900 min-h-screen container mx-auto px-4 py-8 mt-16 max-w-full w-full transition-all">
+    <div className="bg-gray-900 min-h-screen container mx-auto px-4 py-8 mt-16 max-w-full w-full">
       <Header />
-      <div className="flex space-x-4 overflow-x-auto">
-        {product.image && (
-          <div className="w-full shadow-lg overflow-hidden mb-5 flex">
-            <div className="relative w-full h-[360px]">
-              <Image
-                src={product.image || "/placeholder.jpg"}
-                alt={product.name}
-                fill
-                className="object-fill"
-              />
-              <button
-                onClick={() => toggleFavorite(product.id)}
-                className="absolute top-2 right-2 bg-opacity-70 p-1 rounded-full hover:bg-opacity-100 transition cursor-pointer"
-              >
-                <Heart
-                  size={24}
-                  className={`transition ${favorites[product.id] ? "fill-red-500 text-red-500" : "text-white"}`}
-                  fill={favorites[product.id] ? "red" : "none"}
-                />
-              </button>
-              <span
-                className={`absolute top-2 left-2 text-xs px-2 py-1 rounded-full font-medium ${product.stock > 0
-                  ? "bg-green-600 text-white"
-                  : "bg-red-500 text-white"
-                  }`}
-              >
-                {product.stock > 0 ? "In Stock" : "Out of Stock"}
-              </span>
-            </div>
-            <div className="p-10 flex flex-col gap-2 pt-5 w-full">
-              <h4 className="text-lg font-semibold text-gray-400 leading-snug">
-                {product.description
-                  .match(/.{1,65}/g)
-                  ?.map((line, index) => (
-                    <React.Fragment key={index}>
-                      {line}
-                      <br />
-                    </React.Fragment>
-                  ))}
-              </h4>
-              <h4 className="text-lg font-extrabold text-white truncate">{product.name}</h4>
-              <p className="text-green-600 text-xl font-bold">
-                {new Intl.NumberFormat("en-US", {
-                  style: "currency",
-                  currency: "USD",
-                }).format(product.price)}
-              </p>
-              <button
-                className="mt-auto h-12 flex gap-2 items-center justify-center bg-green-600 text-white py-2 rounded-xl max-w-80 hover:bg-green-700 transition duration-300 shadow-md cursor-pointer relative disabled:bg-green-700"
-                onClick={handleBuyNow}
-                disabled={loading[product.id]}
-              >
-                {loading[product.id] ? (
-                  <div className="flex gap-1">
-                    <div className="h-2 w-2 bg-white rounded-full animate-[fadeInOut_1s_infinite]"></div>
-                    <div className="h-2 w-2 bg-white rounded-full animate-[fadeInOut_1s_infinite] [animation-delay:0.3s]"></div>
-                    <div className="h-2 w-2 bg-white rounded-full animate-[fadeInOut_1s_infinite] [animation-delay:0.5s]"></div>
-                  </div>
-                ) : (
-                  "Buy Now"
-                )}
-              </button>
-            </div>
+      <div className="flex flex-col md:flex-row bg-gray-800 rounded-3xl overflow-hidden shadow-2xl border border-gray-700">
+        
+        {/* Lado Esquerdo: Imagem */}
+        <div className="relative w-full md:w-1/2 h-[400px] md:h-[500px]">
+          <Image
+            src={product.product_image || "/placeholder.jpg"}
+            alt={product.product_name}
+            fill
+            className="object-cover"
+            priority
+          />
+          <button
+            onClick={() => setFavorites(prev => ({ ...prev, [product.product_id]: !prev[product.product_id] }))}
+            className="absolute top-4 right-4 bg-black/40 p-2 rounded-full hover:bg-black/60 transition"
+          >
+            <Heart
+              size={28}
+              className={favorites[product.product_id] ? "fill-red-500 text-red-500" : "text-white"}
+            />
+          </button>
+          <span className={`absolute top-4 left-4 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider ${
+            product.product_stock > 0 ? "bg-green-600 text-white" : "bg-red-500 text-white"
+          }`}>
+            {product.product_stock > 0 ? "Disponível" : "Esgotado"}
+          </span>
+        </div>
+
+        {/* Lado Direito: Informações */}
+        <div className="p-8 md:p-12 flex flex-col justify-center w-full md:w-1/2">
+          <h1 className="text-3xl md:text-4xl font-black text-white mb-4">
+            {product.product_name}
+          </h1>
+          
+          <div className="mb-6">
+            <p className="text-gray-400 text-lg leading-relaxed italic">
+              "{product.product_description}"
+            </p>
           </div>
-        )}
+
+          <div className="flex items-center gap-4 mb-8">
+            <span className="text-4xl font-bold text-green-500">
+              {new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: "USD",
+              }).format(product.product_price)}
+            </span>
+          </div>
+
+          <button
+            className="w-full md:max-w-xs h-14 bg-green-600 hover:bg-green-700 text-white font-black text-lg rounded-2xl transition-all shadow-lg shadow-green-900/20 flex items-center justify-center gap-3 disabled:opacity-50"
+            onClick={handleBuyNow}
+            disabled={isBuying || product.product_stock <= 0}
+          >
+            {isBuying ? (
+              <div className="flex gap-1">
+                <div className="h-2 w-2 bg-white rounded-full animate-bounce"></div>
+                <div className="h-2 w-2 bg-white rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                <div className="h-2 w-2 bg-white rounded-full animate-bounce [animation-delay:0.4s]"></div>
+              </div>
+            ) : (
+              "Comprar Agora"
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -170,7 +152,7 @@ function Details() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<Loadingpage />}>
       <Details />
     </Suspense>
   );
