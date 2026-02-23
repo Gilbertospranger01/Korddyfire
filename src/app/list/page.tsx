@@ -2,27 +2,28 @@
 export const dynamic = "force-dynamic";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import api from "@/utils/api";  // <-- aqui, troca supabase por api
+import { useSearchParams, useRouter } from "next/navigation";
+import api from "@/utils/api"; 
 import Header from "@/components/header";
 import Image from "next/image";
 import { Heart } from "lucide-react";
-import { useRouter } from "next/navigation";
 import Loadingpage from "@/loadingpages/loadingpage";
 
+// Tipagem alinhada com seu Model Sequelize
 interface Product {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
-  image?: string;
-  stock: number;
+  product_id: string;      // ID no banco é product_id
+  product_name: string;    // Nome no banco é product_name
+  product_price: number;
+  product_description: string;
+  product_image?: string;
+  product_stock: number;
 }
 
 function List() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const productName = searchParams.get("value");
+  const productNameQuery = searchParams.get("value"); // Valor vindo da URL
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,121 +32,112 @@ function List() {
 
   const handleBuyNow = (productId: string) => {
     setLoadin((prev) => ({ ...prev, [productId]: true }));
-    setTimeout(() => {
-      router.push(`/details?id=${productId}`);
-      setLoadin((prev) => ({ ...prev, [productId]: false }));
-    }, 2000);
+    // Redireciona para detalhes usando o product_id correto
+    router.push(`/details?id=${productId}`);
   };
 
   const toggleFavorite = (id: string) => {
-    setFavorites((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+    setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   useEffect(() => {
-  async function fetchProducts() {
-    if (!productName) {
-      setLoading(false);
-      return;
+    async function fetchProducts() {
+      // Se não houver busca, não faz nada ou busca todos
+      if (!productNameQuery) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        /**
+         * AJUSTE DE ENDPOINT:
+         * Removi o 'name_like'. No Sequelize, você deve tratar o filtro no Controller.
+         * Enviamos apenas 'name' como parâmetro.
+         */
+        const response = await api.get('products', {
+          params: { name: productNameQuery } 
+        });
+
+        // Verifique se o backend retorna o array direto ou dentro de um objeto
+        const data = Array.isArray(response.data) ? response.data : response.data.products || [];
+        setProducts(data);
+      } catch (err) {
+        setError("Erro ao buscar produtos.");
+        console.error("Erro na API:", err);
+      } finally {
+        setLoading(false);
+      }
     }
 
-    const unslugify = (slug: string) => slug.replace(/-/g, " ");
-    const searchQuery = unslugify(productName);
+    fetchProducts();
+  }, [productNameQuery]);
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await api.get(`products?name_like=${encodeURIComponent(searchQuery)}`);
-      setProducts(response.data);
-    } catch (err) {
-      setError("Erro ao buscar produtos.");
-      setProducts([]);
-      console.error("Erro ao buscar produtos:", err);
-    }
-
-    setLoading(false);
-  }
-
-  fetchProducts();
-}, [productName]);
-
-  if (loading) {
-    return <Loadingpage />;
-  }
-
-  if (error) return <p className="text-red-500">{error}</p>;
-
-  if (products.length === 0) return <p>Produto(s) não encontrado(s).</p>;
+  if (loading) return <Loadingpage />;
+  if (error) return <div className="text-center p-10 text-red-500">{error}</div>;
 
   return (
-    <div className="bg-gray-900 min-h-screen container mx-auto px-4 py-8 mt-16 max-w-full w-full transition-all">
+    <div className="bg-gray-900 min-h-screen container mx-auto px-4 py-8 mt-16 max-w-full w-full">
       <Header />
-      <div className="flex space-x-4 overflow-x-auto">
-        {products.map((product) => (
-          <div
-            key={product.id}
-            className="bg-white max-w-[300px] w-full rounded-2xl shadow-lg overflow-hidden mb-5"
-          >
-            <div className="relative w-full h-[300px]">
-              <Image
-                src={product.image || "/placeholder.jpg"}
-                alt={product.name}
-                fill
-                className="object-cover"
-              />
-              <button
-                onClick={() => toggleFavorite(product.id)}
-                className="absolute top-2 right-2 bg-opacity-70 p-1 rounded-full hover:bg-opacity-100 transition cursor-pointer"
-              >
-                <Heart
-                  size={24}
-                  className={`transition ${favorites[product.id] ? "fill-red-500 text-red-500" : "text-white"}`}
-                  fill={favorites[product.id] ? "red" : "none"}
+      
+      {products.length === 0 ? (
+        <p className="text-white text-center mt-20">Nenhum produto encontrado para "{productNameQuery}".</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {products.map((product) => (
+            <div key={product.product_id} className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col">
+              <div className="relative w-full h-[250px]">
+                <Image
+                  src={product.product_image || "/placeholder.jpg"}
+                  alt={product.product_name}
+                  fill
+                  className="object-cover"
                 />
-              </button>
-              <span
-                className={`absolute top-2 left-2 text-xs px-2 py-1 rounded-full font-medium ${
-                  product.stock > 0 ? "bg-green-600 text-white" : "bg-red-500 text-white"
-                }`}
-              >
-                {product.stock > 0 ? "In Stock" : "Out of Stock"}
-              </span>
+                <button
+                  onClick={() => toggleFavorite(product.product_id)}
+                  className="absolute top-2 right-2 p-2 bg-black/20 rounded-full hover:bg-black/40 transition"
+                >
+                  <Heart
+                    size={22}
+                    className={favorites[product.product_id] ? "fill-red-500 text-red-500" : "text-white"}
+                  />
+                </button>
+                <span className={`absolute top-2 left-2 text-[10px] px-2 py-1 rounded-full font-bold uppercase ${
+                  product.product_stock > 0 ? "bg-green-600 text-white" : "bg-red-500 text-white"
+                }`}>
+                  {product.product_stock > 0 ? "Em Estoque" : "Esgotado"}
+                </span>
+              </div>
+
+              <div className="p-4 flex flex-col flex-1 gap-2">
+                <h3 className="text-gray-900 font-bold text-lg truncate">{product.product_name}</h3>
+                <p className="text-gray-500 text-xs line-clamp-2 h-8">{product.product_description}</p>
+                
+                <p className="text-green-600 text-xl font-black mt-2">
+                  {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(product.product_price)}
+                </p>
+
+                <button
+                  className="mt-auto h-11 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition flex items-center justify-center disabled:opacity-50"
+                  onClick={() => handleBuyNow(product.product_id)}
+                  disabled={loadin[product.product_id]}
+                >
+                  {loadin[product.product_id] ? "Carregando..." : "Ver Detalhes"}
+                </button>
+              </div>
             </div>
-            <div className="p-4 flex flex-col gap-2 pt-5">
-              <h4 className="text-lg font-semibold text-gray-800 truncate">{product.description}</h4>
-              <h4 className="text-lg font-semibold text-gray-800 truncate">{product.name}</h4>
-              <p className="text-green-600 text-xl font-bold">
-                {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(product.price)}
-              </p>
-              <button
-                className="mt-auto h-12 flex gap-2 items-center justify-center bg-green-600 text-white py-2 rounded-xl w-full hover:bg-green-700 transition duration-300 shadow-md cursor-pointer relative disabled:bg-green-700"
-                onClick={() => handleBuyNow(product.id)}
-                disabled={loadin[product.id]}
-              >
-                {loadin[product.id] ? (
-                  <div className="flex gap-1">
-                    <div className="h-2 w-2 bg-white rounded-full animate-[fadeInOut_1s_infinite]"></div>
-                    <div className="h-2 w-2 bg-white rounded-full animate-[fadeInOut_1s_infinite] [animation-delay:0.3s]"></div>
-                    <div className="h-2 w-2 bg-white rounded-full animate-[fadeInOut_1s_infinite] [animation-delay:0.5s]"></div>
-                  </div>
-                ) : (
-                  "Buy Now"
-                )}
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 export default function ListPage() {
   return (
-    <Suspense fallback={<p>Carregando produtos...</p>}>
+    <Suspense fallback={<Loadingpage />}>
       <List />
     </Suspense>
   );
