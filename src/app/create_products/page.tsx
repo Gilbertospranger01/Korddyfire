@@ -106,7 +106,7 @@ const Create_Products = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) {
-      addToast("Você precisa estar logado para criar um produto 😢", "warning");
+      addToast("Usuário não logado", "warning");
       return;
     }
 
@@ -119,7 +119,8 @@ const Create_Products = () => {
         const formData = new FormData();
         formData.append("file", imageFile);
         const res = await api.post("/upload/uploadimage", formData, { headers: { "Content-Type": "multipart/form-data" } });
-        imageUrl = res.data.fileUrl; // backend retorna fileUrl
+        imageUrl = res.data.fileUrl; // usar exatamente o retorno do backend
+        if (res.data.message) addToast(res.data.message, "info");
       }
 
       // Upload digital
@@ -134,6 +135,7 @@ const Create_Products = () => {
 
         const res = await api.post(endpoint, formData, { headers: { "Content-Type": "multipart/form-data" } });
         digitalUrl = res.data.fileUrl;
+        if (res.data.message) addToast(res.data.message, "info");
       }
 
       const payload = {
@@ -144,16 +146,15 @@ const Create_Products = () => {
 
       const createResp = await api.post("/products", payload);
 
-      if (createResp.status === 201) {
-        addToast("Produto criado com sucesso! 🎉", "success");
-        setTimeout(() => router.push("/home"), 1000);
-      } else {
-        addToast("Não foi possível criar o produto 😢", "error");
-        console.error("Erro ao criar produto:", createResp);
-      }
-    } catch (err) {
+      if (createResp.data.message) addToast(createResp.data.message, createResp.data.status || "info");
+
+      if (createResp.status === 201) setTimeout(() => router.push("/home"), 1000);
+
+    } catch (err: any) {
+      // exibir mensagem do backend se tiver
+      if (err.response?.data?.message) addToast(err.response.data.message, "error");
+      else addToast("Erro desconhecido", "error");
       console.error("Erro ao criar produto:", err);
-      addToast("Erro de conexão. Tenta outra vez!", "error");
     } finally {
       setLoading(false);
     }
@@ -163,7 +164,6 @@ const Create_Products = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white overflow-hidden">
-      {/* Header */}
       <header className="flex fixed w-full justify-between items-center p-4 bg-gray-800 shadow-md border-b border-gray-400">
         <div className="flex items-center">
           <button onClick={() => router.push("/home")} className="text-gray-400 hover:text-white transition cursor-pointer">
