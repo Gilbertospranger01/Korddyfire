@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import api from "@/utils/api";
 import Image from "next/image";
 import Side_Seller_Dashboard from "@/components/sideSellerdashboard";
+import Toast from "@/components/toast";
 import { FiArrowLeft } from "react-icons/fi";
 import Loadingpage from "@/loadingpages/loadingpage";
 
@@ -209,6 +210,12 @@ const Create_Products = () => {
           <h1 className="text-4xl text-center font-bold mb-10 text-green-500">
             Create New Product
           </h1>
+
+          <div className="fixed top-5 right-5 z-50 flex flex-col">
+  {toasts.map((t) => (
+          <Toast key={t.id} type={t.type} message={t.message} />
+  ))}
+          </div>
 
           <form
             onSubmit={handleSubmit}
